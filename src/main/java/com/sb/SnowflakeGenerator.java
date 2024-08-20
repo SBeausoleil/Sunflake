@@ -1,5 +1,6 @@
 package com.sb;
 
+import java.io.Serializable;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -10,28 +11,32 @@ import java.util.concurrent.atomic.AtomicLong;
  * This implementation is mostly lockless and uses atomic logic to ensure thread-safety and increase locality of locks.
  * A rare but noticeable (less than 1ms) lock only occurs when the sequence number would be out of bound.
  */
-public class Snowflake {
+public class SnowflakeGenerator implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+    public static final Instant DEFAULT_EPOCH = Instant.parse("2015-01-01T00:00:00Z");
+
     /**
      * Number of bits in the sequence.
      */
-    private static final int SEQUENCE_LENGTH = 12;
-    private static final int SEQUENCE_MASK = (1 << SEQUENCE_LENGTH) - 1;
-    private static final int MACHINE_ID_LENGTH = 10;
-    private static final int MACHINE_ID_SHIFT = SEQUENCE_LENGTH;
+    public static final int SEQUENCE_LENGTH = 12;
+    public static final int SEQUENCE_MASK = (1 << SEQUENCE_LENGTH) - 1;
+    public static final int MACHINE_ID_LENGTH = 10;
+    public static final int MACHINE_ID_SHIFT = SEQUENCE_LENGTH;
     /**
      * Mask on the machine id to ensure correct size.
      * Apply on non-shifted number.
      */
-    private static final int MACHINE_ID_MASK = ((1 << (MACHINE_ID_LENGTH)) - 1);
-    private static final int TS_LENGTH = 41;
-    private static final int TS_SHIFT = SEQUENCE_LENGTH + MACHINE_ID_LENGTH - 1;
+    public static final int MACHINE_ID_MASK = ((1 << (MACHINE_ID_LENGTH)) - 1);
+    public static final int TS_LENGTH = 41;
+    public static final int TS_SHIFT = SEQUENCE_LENGTH + MACHINE_ID_LENGTH;
 
     private final Instant EPOCH;
 
     /**
      * Time since the epoch when this generator was instantiated.
      */
-    private final long INSTANCE_START_TIME;
+    private final long INSTANCE_START_TIME; // TESTME
     /**
      * To avoid issues with leap seconds and backward flowing time,
      * this generator uses a monotonical clock. Since it is unknown
@@ -51,7 +56,11 @@ public class Snowflake {
     private final AtomicLong previousTimestamp;
     private final AtomicInteger sequence;
 
-    public Snowflake(Instant epoch, int machineId) {
+    public SnowflakeGenerator(int machineId) {
+        this(machineId, DEFAULT_EPOCH);
+    }
+
+    public SnowflakeGenerator(int machineId, Instant epoch) {
         int maskedId = machineId & MACHINE_ID_MASK;
         if (maskedId != machineId) {
             throw new IllegalArgumentException("Invalid machineId: " + machineId + " (too big). " +
@@ -96,18 +105,23 @@ public class Snowflake {
     }
 
     private long shiftedMonotonicTime() {
+        //System.out.println();
         long ts = (System.nanoTime() - CLOCK_EPOCH) / 1_000_000;
+        //System.out.println("TS: " + ts + " (" + toUnformattedBinary(ts) + ")");
         ts += INSTANCE_START_TIME;
+        //System.out.println("Adjusted ts: " + ts + " (" + toUnformattedBinary(ts) + ")");
         ts <<= TS_SHIFT;
+        //System.out.println("Shifted (" + TS_SHIFT + ") ts: " + ts + " (" + toUnformattedBinary(ts) + ")");
+        //System.out.println(toFormattedBinary(ts));
         return ts;
     }
 
     private long awaitNextTimestamp(long tsOnArrival) {
         long ts;
         do {
+            Thread.onSpinWait(); // Free some CPU resources
             ts = shiftedMonotonicTime();
-        }
-        while (ts <= tsOnArrival);
+        } while (ts <= tsOnArrival);
         resetSequence(ts);
         return ts;
     }
@@ -158,9 +172,9 @@ public class Snowflake {
             sb.append(bits[i]);
             if (i == 0) // Sign bit
                 sb.append('_');
-            else if (i == 1 + TS_LENGTH) { // TS bits
+            else if (i + 1 == 1 + TS_LENGTH) { // TS bits
                 sb.append('_');
-            } else if (i == 1 + TS_LENGTH + MACHINE_ID_LENGTH) { // Machine ID bits
+            } else if (i + 1 == 1 + TS_LENGTH + MACHINE_ID_LENGTH) { // Machine ID bits
                 sb.append('_');
             }
         }
