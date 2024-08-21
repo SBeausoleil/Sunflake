@@ -1,5 +1,6 @@
 package com.sb;
 
+import com.sb.flake.BinaryUtil;
 import com.sb.flake.FlakeData;
 import com.sb.flake.SnowflakeGenerator;
 import org.junit.jupiter.api.Test;
@@ -19,7 +20,8 @@ class SnowflakeGeneratorTest {
         long snowflake = generator.nextId();
 
         FlakeData data = generator.parse(snowflake);
-        String flakeDefinition = " Snowflake was: " + snowflake + "(" + SnowflakeGenerator.toFormattedBinary(snowflake) + "), parsed: " + data;
+        System.out.println(BinaryUtil.toUnformattedBinary(snowflake));
+        String flakeDefinition = " Snowflake was: " + snowflake + "(" + BinaryUtil.toFormattedBinary(snowflake, SnowflakeGenerator.RULES) + "), parsed: " + data;
         assertFalse(data.getSinceEpoch().isNegative(), "Negative duration." + flakeDefinition);
         assertTrue(data.getSinceEpoch().toMillis() <= 2, "Weird duration on single call." + flakeDefinition); // Allow 2ms room for very slow computers
         assertEquals(MACHINE_ID, data.getWorkerId(), "Invalid machineId." + flakeDefinition);
@@ -36,7 +38,7 @@ class SnowflakeGeneratorTest {
             long snowflake = generator.nextId();
 
             FlakeData data = generator.parse(snowflake);
-            String flakeDefinition = " Snowflake was: " + snowflake + "(" + SnowflakeGenerator.toFormattedBinary(snowflake) + "), parsed: " + data;
+            String flakeDefinition = " Snowflake was: " + snowflake + "(" + BinaryUtil.toFormattedBinary(snowflake, SnowflakeGenerator.RULES) + "), parsed: " + data;
             assertEquals(LOW_MACHINE_ID, data.getWorkerId(), "Invalid machineId." + flakeDefinition);
         }
     }

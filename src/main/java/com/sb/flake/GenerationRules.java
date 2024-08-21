@@ -22,13 +22,13 @@ public class GenerationRules implements Serializable {
     protected final long SIGN_MASK;
     protected final boolean ALLOW_TS_LOOPING;
 
-    protected final int SEQUENCE_MASK;
-    protected final int WORKER_ID_MASK;
-    protected final int TIMESTAMP_MASK;
+    protected final long SEQUENCE_MASK;
+    protected final long WORKER_ID_MASK;
+    protected final long TIMESTAMP_MASK;
     protected final int TIMESTAMP_SHIFT;
 
-    protected final int SHIFTED_WORKER_ID_MASK;
-    protected final int SHIFTED_TIMESTAMP_MASK;
+    protected final long SHIFTED_WORKER_ID_MASK;
+    protected final long SHIFTED_TIMESTAMP_MASK;
 
     /**
      * Construct a GenerationRules instance.
@@ -75,9 +75,9 @@ public class GenerationRules implements Serializable {
             throw new IllegalArgumentException("Total of bits is larger than 64 or would use the sign bit without being allowed!");
         }
 
-        this.SEQUENCE_MASK = (1 << SEQUENCE_SIZE) - 1;
-        this.WORKER_ID_MASK = (1 << WORKER_ID_SIZE) - 1;
-        this.TIMESTAMP_MASK = (1 << TIMESTAMP_SIZE) - 1;
+        this.SEQUENCE_MASK = (1L << SEQUENCE_SIZE) - 1;
+        this.WORKER_ID_MASK = (1L << WORKER_ID_SIZE) - 1;
+        this.TIMESTAMP_MASK = (1L << TIMESTAMP_SIZE) - 1;
 
         this.TIMESTAMP_SHIFT = SEQUENCE_SIZE + WORKER_ID_SIZE;
 
@@ -89,7 +89,7 @@ public class GenerationRules implements Serializable {
         return SEQUENCE_SIZE;
     }
 
-    public int getSequenceMask() {
+    public long getSequenceMask() {
         return SEQUENCE_MASK;
     }
 
@@ -97,7 +97,7 @@ public class GenerationRules implements Serializable {
         return WORKER_ID_SIZE;
     }
 
-    public int getWorkerIdMask() {
+    public long getWorkerIdMask() {
         return WORKER_ID_MASK;
     }
 
@@ -105,7 +105,7 @@ public class GenerationRules implements Serializable {
         return SEQUENCE_SIZE;
     }
 
-    public int getShiftedWorkerIdMask() {
+    public long getShiftedWorkerIdMask() {
         return SHIFTED_WORKER_ID_MASK;
     }
 
@@ -113,7 +113,7 @@ public class GenerationRules implements Serializable {
         return TIMESTAMP_SIZE;
     }
 
-    public int getTimestampMask() {
+    public long getTimestampMask() {
         return TIMESTAMP_MASK;
     }
 
@@ -121,7 +121,7 @@ public class GenerationRules implements Serializable {
         return TIMESTAMP_SHIFT;
     }
 
-    public int getShiftedTimestampMask() {
+    public long getShiftedTimestampMask() {
         return SHIFTED_TIMESTAMP_MASK;
     }
 

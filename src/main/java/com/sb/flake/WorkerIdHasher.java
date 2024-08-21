@@ -1,9 +1,9 @@
 package com.sb.flake;
 
 import java.util.HashMap;
-import java.util.function.ToIntFunction;
+import java.util.function.ToLongFunction;
 
-public interface WorkerIdHasher<T> extends ToIntFunction<T> {
+public interface WorkerIdHasher<T> extends ToLongFunction<T> {
     /**
      * Checks if all the worker id seeds will provide unique masked hashes.
      * @param rules the rules that will be used by flake generators.
@@ -11,9 +11,9 @@ public interface WorkerIdHasher<T> extends ToIntFunction<T> {
      * @throws NonUniqueException in case two or more seeds' hashes collide.
      */
     default void checkUniqueness(GenerationRules rules, Iterable<T> seeds) throws NonUniqueException {
-        HashMap<Integer, T> generatedIds = new HashMap<>();
+        HashMap<Long, T> generatedIds = new HashMap<>();
         for (T seed : seeds) {
-            int hash = applyAsInt(seed) & rules.getWorkerIdMask();
+            long hash = applyAsLong(seed) & rules.getWorkerIdMask();
             T alreadyIndexed = generatedIds.get(hash);
             if (alreadyIndexed != null) {
                 throw new NonUniqueException(alreadyIndexed, seed, hash);

@@ -3,9 +3,9 @@ package com.sb.flake;
 public class NonUniqueException extends Exception {
     private final Object alreadyIndexed;
     private final Object colliding;
-    private final int collision;
+    private final long collision;
 
-    public NonUniqueException(Object alreadyIndexed, Object colliding, int collision) {
+    public NonUniqueException(Object alreadyIndexed, Object colliding, long collision) {
         super("Colliding worker ids: [" + alreadyIndexed + ", " + colliding + "], hash collision = " + collision);
         this.alreadyIndexed = alreadyIndexed;
         this.colliding = colliding;
@@ -20,7 +20,7 @@ public class NonUniqueException extends Exception {
         return colliding;
     }
 
-    public int getCollision() {
+    public long getCollision() {
         return collision;
     }
 }
