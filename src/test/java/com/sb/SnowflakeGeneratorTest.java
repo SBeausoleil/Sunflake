@@ -1,5 +1,7 @@
 package com.sb;
 
+import com.sb.flake.FlakeData;
+import com.sb.flake.SnowflakeGenerator;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -26,18 +28,16 @@ class SnowflakeGeneratorTest {
 
     // Because random testing found an issue when the timestamp started by 1 and was not shifted correctly.
     @Test
-    void nextId_setsTimestampCorrectly() {
+    void nextId_setsTimestampCorrectly() throws InterruptedException {
         final int LOW_MACHINE_ID = 2;
+        SnowflakeGenerator generator = new SnowflakeGenerator(LOW_MACHINE_ID, Instant.now());
         for (int i = 0; i < 100; i++) {
-            SnowflakeGenerator generator = new SnowflakeGenerator(LOW_MACHINE_ID, Instant.now());
-
+            Thread.sleep(3);
             long snowflake = generator.nextId();
 
             FlakeData data = generator.parse(snowflake);
             String flakeDefinition = " Snowflake was: " + snowflake + "(" + SnowflakeGenerator.toFormattedBinary(snowflake) + "), parsed: " + data;
             assertEquals(LOW_MACHINE_ID, data.getMachineId(), "Invalid machineId." + flakeDefinition);
-
-            System.out.println("OK!" + flakeDefinition);
         }
     }
 

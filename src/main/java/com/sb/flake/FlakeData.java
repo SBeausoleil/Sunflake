@@ -1,4 +1,4 @@
-package com.sb;
+package com.sb.flake;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -7,14 +7,14 @@ public class FlakeData {
     private final long FLAKE;
     private final Instant TIMESTAMP;
     private final Duration SINCE_EPOCH;
-    private final short MACHINE_ID;
+    private final short workerId;
     private final short SEQUENCE_NUMBER;
 
-    public FlakeData(long flake, Instant TIMESTAMP, Duration sinceEpoch, short MACHINE_ID, short SEQUENCE_NUMBER) {
+    public FlakeData(long flake, Instant timestamp, Duration sinceEpoch, short workerId, short SEQUENCE_NUMBER) {
         this.FLAKE = flake;
-        this.TIMESTAMP = TIMESTAMP;
+        this.TIMESTAMP = timestamp;
         this.SINCE_EPOCH = sinceEpoch;
-        this.MACHINE_ID = MACHINE_ID;
+        this.workerId = workerId;
         this.SEQUENCE_NUMBER = SEQUENCE_NUMBER;
     }
 
@@ -30,8 +30,8 @@ public class FlakeData {
         return SINCE_EPOCH;
     }
 
-    public short getMachineId() {
-        return MACHINE_ID;
+    public short getWorkerId() {
+        return workerId;
     }
 
     public short getSequenceNumber() {
@@ -43,7 +43,7 @@ public class FlakeData {
         return "FlakeData{" +
                 "timestamp=" + TIMESTAMP +
                 ", sinceEpoch=" + SINCE_EPOCH +
-                ", machineId=" + MACHINE_ID +
+                ", workerId=" + workerId +
                 ", sequenceNumber=" + SEQUENCE_NUMBER +
                 '}';
     }

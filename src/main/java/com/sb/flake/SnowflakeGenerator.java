@@ -1,4 +1,4 @@
-package com.sb;
+package com.sb.flake;
 
 import java.io.Serializable;
 import java.time.Duration;
@@ -75,6 +75,10 @@ public class SnowflakeGenerator implements Serializable {
         sequence = new AtomicInteger();
     }
 
+    public short getMachineId() {
+        return (short) (MACHINE_ID >> MACHINE_ID_SHIFT);
+    }
+
     public long nextId() {
         long id = shiftedMonotonicTime();
         if (previousTimestamp.getPlain() != id) {
@@ -146,11 +150,11 @@ public class SnowflakeGenerator implements Serializable {
     }
 
     // For JavaFlakeTest
-    long[] primitiveParse(long snowflake) {
+    public long[] primitiveParse(long snowflake) {
         FlakeData data = parse(snowflake);
         return new long[]{
                 data.getTimestamp().toEpochMilli(),
-                data.getMachineId(),
+                data.getWorkerId(),
                 data.getSequenceNumber()
         };
     }
