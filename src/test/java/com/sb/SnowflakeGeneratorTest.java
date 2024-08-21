@@ -22,7 +22,7 @@ class SnowflakeGeneratorTest {
         String flakeDefinition = " Snowflake was: " + snowflake + "(" + SnowflakeGenerator.toFormattedBinary(snowflake) + "), parsed: " + data;
         assertFalse(data.getSinceEpoch().isNegative(), "Negative duration." + flakeDefinition);
         assertTrue(data.getSinceEpoch().toMillis() <= 2, "Weird duration on single call." + flakeDefinition); // Allow 2ms room for very slow computers
-        assertEquals(MACHINE_ID, data.getMachineId(), "Invalid machineId." + flakeDefinition);
+        assertEquals(MACHINE_ID, data.getWorkerId(), "Invalid machineId." + flakeDefinition);
         assertEquals(0, data.getSequenceNumber(), "invalid sequence number." + flakeDefinition);
     }
 
@@ -37,7 +37,7 @@ class SnowflakeGeneratorTest {
 
             FlakeData data = generator.parse(snowflake);
             String flakeDefinition = " Snowflake was: " + snowflake + "(" + SnowflakeGenerator.toFormattedBinary(snowflake) + "), parsed: " + data;
-            assertEquals(LOW_MACHINE_ID, data.getMachineId(), "Invalid machineId." + flakeDefinition);
+            assertEquals(LOW_MACHINE_ID, data.getWorkerId(), "Invalid machineId." + flakeDefinition);
         }
     }
 
