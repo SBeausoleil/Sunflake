@@ -7,10 +7,10 @@ public class FlakeData {
     private final long FLAKE;
     private final Instant TIMESTAMP;
     private final Duration SINCE_EPOCH;
-    private final short workerId;
-    private final short SEQUENCE_NUMBER;
+    private final long workerId;
+    private final long SEQUENCE_NUMBER;
 
-    public FlakeData(long flake, Instant timestamp, Duration sinceEpoch, short workerId, short SEQUENCE_NUMBER) {
+    public FlakeData(long flake, Instant timestamp, Duration sinceEpoch, long workerId, long SEQUENCE_NUMBER) {
         this.FLAKE = flake;
         this.TIMESTAMP = timestamp;
         this.SINCE_EPOCH = sinceEpoch;
@@ -30,11 +30,11 @@ public class FlakeData {
         return SINCE_EPOCH;
     }
 
-    public short getWorkerId() {
+    public long getWorkerId() {
         return workerId;
     }
 
-    public short getSequenceNumber() {
+    public long getSequenceNumber() {
         return SEQUENCE_NUMBER;
     }
 

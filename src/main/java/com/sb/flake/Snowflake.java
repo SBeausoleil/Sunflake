@@ -1,19 +1,12 @@
 package com.sb.flake;
 
 import java.io.Serializable;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * Classical Twitter Snowflake implementation.
- * This implementation is mostly lockless and uses atomic logic to ensure thread-safety and increase locality of locks.
- * A rare but noticeable (less than 1ms) lock only occurs when the sequence number would be out of bound.
- */
-public class SnowflakeGenerator extends FlakeGenerator implements Serializable {
+public final class Snowflake implements Serializable {
     private static final long serialVersionUID = 1L;
+
 
     public static final Instant DEFAULT_EPOCH = Instant.parse("2015-01-01T00:00:00Z");
 
@@ -32,13 +25,7 @@ public class SnowflakeGenerator extends FlakeGenerator implements Serializable {
     public static final int TS_LENGTH = 41;
     public static final int TS_SHIFT = SEQUENCE_LENGTH + MACHINE_ID_LENGTH;
 
+    private Snowflake() {}
+
     public static final GenerationRules RULES = new GenerationRules(SEQUENCE_LENGTH, MACHINE_ID_LENGTH, TS_LENGTH, false, false, TimeUnit.MILLISECONDS);
-
-    public SnowflakeGenerator(int workerId) {
-        super(DEFAULT_EPOCH, workerId, RULES);
-    }
-
-    public SnowflakeGenerator(int workerId, Instant epoch) {
-        super(epoch, workerId, RULES);
-    }
 }

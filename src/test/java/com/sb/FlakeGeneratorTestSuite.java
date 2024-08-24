@@ -1,9 +1,6 @@
 package com.sb;
 
-import com.sb.flake.BinaryUtil;
-import com.sb.flake.FlakeData;
-import com.sb.flake.FlakeGenerator;
-import com.sb.flake.SnowflakeGenerator;
+import com.sb.flake.*;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -12,17 +9,19 @@ import java.util.concurrent.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class SnowflakeGeneratorTest {
+public abstract class FlakeGeneratorTestSuite {
+    abstract FlakeGenerator makeGenerator(Instant epoch, long machineId);
+
 
     @Test
     void nextId_setsBitsCorrectly() {
-        final int MACHINE_ID = ThreadLocalRandom.current().nextInt() & ((1 << SnowflakeGenerator.MACHINE_ID_LENGTH) - 1);
-        SnowflakeGenerator generator = new SnowflakeGenerator(MACHINE_ID, Instant.now());
+        final int MACHINE_ID = ThreadLocalRandom.current().nextInt() & ((1 << AtomicSnowflakeGenerator.MACHINE_ID_LENGTH) - 1);
+        FlakeGenerator generator = makeGenerator(Instant.now(), MACHINE_ID);
 
         long snowflake = generator.nextId();
 
         FlakeData data = generator.parse(snowflake);
-        String flakeDefinition = " Snowflake was: " + snowflake + "(" + BinaryUtil.toFormattedBinary(snowflake, SnowflakeGenerator.RULES) + "), parsed: " + data;
+        String flakeDefinition = " Snowflake was: " + snowflake + "(" + BinaryUtil.toFormattedBinary(snowflake, AtomicSnowflakeGenerator.RULES) + "), parsed: " + data;
         assertFalse(data.getSinceEpoch().isNegative(), "Negative duration." + flakeDefinition);
         assertTrue(data.getSinceEpoch().toMillis() <= 2, "Weird duration on single call." + flakeDefinition); // Allow 2ms room for very slow computers
         assertEquals(MACHINE_ID, data.getWorkerId(), "Invalid machineId." + flakeDefinition);
@@ -33,20 +32,20 @@ class SnowflakeGeneratorTest {
     @Test
     void nextId_setsTimestampCorrectly() throws InterruptedException {
         final int LOW_MACHINE_ID = 2;
-        SnowflakeGenerator generator = new SnowflakeGenerator(LOW_MACHINE_ID, Instant.now());
+        FlakeGenerator generator = makeGenerator(Instant.now(), LOW_MACHINE_ID);
         for (int i = 0; i < 10; i++) {
             Thread.sleep(3);
             long snowflake = generator.nextId();
 
             FlakeData data = generator.parse(snowflake);
-            String flakeDefinition = " Snowflake was: " + snowflake + "(" + BinaryUtil.toFormattedBinary(snowflake, SnowflakeGenerator.RULES) + "), parsed: " + data;
+            String flakeDefinition = " Snowflake was: " + snowflake + "(" + BinaryUtil.toFormattedBinary(snowflake, AtomicSnowflakeGenerator.RULES) + "), parsed: " + data;
             assertEquals(LOW_MACHINE_ID, data.getWorkerId(), "Invalid machineId." + flakeDefinition);
         }
     }
 
     @Test
     void nextId_incrementsSequence() {
-        SnowflakeGenerator generator = new SnowflakeGenerator(1, Instant.now());
+        FlakeGenerator generator = makeGenerator(Instant.now(), 1);
         long first = generator.nextId();
         long second = generator.nextId();
         FlakeData firstData = generator.parse(first);
@@ -56,7 +55,7 @@ class SnowflakeGeneratorTest {
 
     @Test
     void nextId_timestampIncreasesNaturally() throws InterruptedException {
-        SnowflakeGenerator generator = new SnowflakeGenerator(1, Instant.now());
+        FlakeGenerator generator = makeGenerator(Instant.now(), 1);
         long first = generator.nextId();
         Thread.sleep(2);
         long second = generator.nextId();
@@ -67,7 +66,7 @@ class SnowflakeGeneratorTest {
 
     @Test
     void nextId_whenSingleThreaded_providesUniqueIds() {
-        final SnowflakeGenerator generator = new SnowflakeGenerator(1, Instant.now());
+        FlakeGenerator generator = makeGenerator(Instant.now(), 1);
         final int N_IDS_TO_GENERATE = 15_000;
         TreeSet<Long> alreadyGenerated = new TreeSet<>();
         for (int i = 0; i < N_IDS_TO_GENERATE; i++) {
@@ -78,7 +77,7 @@ class SnowflakeGeneratorTest {
 
     @Test
     void nextId_whenMultithreaded_providesUniqueIds() throws ExecutionException, InterruptedException {
-        final SnowflakeGenerator generator = new SnowflakeGenerator(1, Instant.now());
+        FlakeGenerator generator = makeGenerator(Instant.now(), 1);
 
         final int N_LOGICAL_CORES = Runtime.getRuntime().availableProcessors();
         final int N_IDS_TO_GENERATE = 5000;
@@ -104,7 +103,7 @@ class SnowflakeGeneratorTest {
 
     @Test
     void nextId_whenMultithreaded_providesUniqueIds_debug() throws ExecutionException, InterruptedException {
-        final SnowflakeGenerator generator = new SnowflakeGenerator(1, Instant.now());
+        FlakeGenerator generator = makeGenerator(Instant.now(), 1);
 
         final int N_LOGICAL_CORES = Runtime.getRuntime().availableProcessors();
         final int N_IDS_TO_GENERATE = 500;
