@@ -117,14 +117,7 @@ class SnowflakeGeneratorTest {
             for (Long id : futureResult.get()) {
                 Long found = registered.get(id);
                 if (found != null) {
-                    String formatted = BinaryUtil.toFormattedBinary(id, generator.getRules());
-                    Iterator<String> it = debugs.iterator();
-                    String toPrint;
-                    do {
-                        toPrint = it.next();
-                        System.out.println(toPrint);
-                    } while (!toPrint.endsWith(formatted) || toPrint.startsWith(String.format("%02d :", thread)));
-
+                    debugs.forEach(System.out::println);
                     fail("Collision! ID 1 = " + BinaryUtil.toFormattedBinary(found, generator.getRules()) + ", ID 2 = " + BinaryUtil.toFormattedBinary(id, generator.getRules()) + " in thread #" + thread);
                 }
                 registered.put(id, id);

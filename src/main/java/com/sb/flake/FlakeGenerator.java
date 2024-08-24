@@ -63,6 +63,12 @@ public class FlakeGenerator {
         if (previousTimestamp.getPlain() != id) {
             resetSequence(id);
         }
+        id = insertSequence(id);
+        id |= this.SHIFTED_MACHINE_ID;
+        return id;
+    }
+
+    private long insertSequence(long id) {
         long sequenceNumber = sequence.getAndIncrement();
         long maskedSequenceNumber = sequenceNumber & this.RULES.SEQUENCE_MASK;
         /* If the maskedSequenceNumber is smaller than the original sequence number,
@@ -76,7 +82,6 @@ public class FlakeGenerator {
             maskedSequenceNumber = sequenceNumber & this.RULES.SEQUENCE_MASK;
         }
         id |= maskedSequenceNumber;
-        id |= this.SHIFTED_MACHINE_ID;
         return id;
     }
 
