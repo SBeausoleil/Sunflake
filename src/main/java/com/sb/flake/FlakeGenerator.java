@@ -3,11 +3,7 @@ package com.sb.flake;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-
-import static com.sb.flake.BinaryUtil.toFormattedBinary;
-import static com.sb.flake.BinaryUtil.toUnformattedBinary;
 
 /**
  * A Flake ID generator that support custom generation rules.
@@ -67,30 +63,33 @@ public class FlakeGenerator {
         if (previousTimestamp.getPlain() != id) {
             resetSequence(id);
         }
-        long sequenceNumber = produceSequenceNumber();
-        if (sequenceNumber < sequence.getPlain()) {
+        long sequenceNumber = sequence.getAndIncrement();
+        long maskedSequenceNumber = sequenceNumber & this.RULES.SEQUENCE_MASK;
+        /* If the maskedSequenceNumber is smaller than the original sequence number,
+        * it means that the sequence number is larger than the max possible sequence number for the rules of the generator
+        * Loop instead of simple condition in case the queue to get a sequence number at the next timestamp
+        * was larger than the max possible sequence number for the rules of the generator.
+         */
+        while (maskedSequenceNumber < sequenceNumber) {
             id = awaitNextTimestamp(id);
-            sequenceNumber = produceSequenceNumber();
+            sequenceNumber = sequence.getAndIncrement();
+            maskedSequenceNumber = sequenceNumber & this.RULES.SEQUENCE_MASK;
         }
-        id |= sequenceNumber;
+        id |= maskedSequenceNumber;
         id |= this.SHIFTED_MACHINE_ID;
         return id;
     }
 
-    private long produceSequenceNumber() {
-        return sequence.getAndIncrement() & this.RULES.SEQUENCE_MASK;
-    }
-
     private long shiftedMonotonicTime() {
-        System.out.println();
+        //System.out.println();
         long ts = System.nanoTime() - CLOCK_EPOCH;
         ts = this.RULES.getTimeUnit().convert(ts, TimeUnit.NANOSECONDS);
-        System.out.println("TS: " + ts + " (" + toUnformattedBinary(ts) + ")");
+        //System.out.println("TS: " + ts + " (" + toUnformattedBinary(ts) + ")");
         ts += INSTANCE_START_TIME;
-        System.out.println("Adjusted ts: " + ts + " (" + toUnformattedBinary(ts) + ")");
+        //System.out.println("Adjusted ts: " + ts + " (" + toUnformattedBinary(ts) + ")");
         ts <<= this.RULES.TIMESTAMP_SHIFT;
-        System.out.println("Shifted (" + this.RULES.TIMESTAMP_SHIFT + ") ts: " + ts + " (" + toUnformattedBinary(ts) + ")");
-        System.out.println(toFormattedBinary(ts, this.RULES));
+        //System.out.println("Shifted (" + this.RULES.TIMESTAMP_SHIFT + ") ts: " + ts + " (" + toUnformattedBinary(ts) + ")");
+        //System.out.println(toFormattedBinary(ts, this.RULES));
         ts &= this.RULES.SIGN_MASK;
         return ts;
     }
@@ -136,5 +135,9 @@ public class FlakeGenerator {
                 flake >> this.RULES.getWorkerIdShift() & this.RULES.WORKER_ID_MASK,
                 flake & this.RULES.SEQUENCE_MASK
         };
+    }
+
+    public GenerationRules getRules() {
+        return this.RULES;
     }
 }
