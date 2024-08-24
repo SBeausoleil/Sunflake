@@ -7,10 +7,7 @@ import com.sb.flake.SnowflakeGenerator;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.WeakHashMap;
+import java.util.*;
 import java.util.concurrent.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -69,6 +66,17 @@ class SnowflakeGeneratorTest {
     }
 
     @Test
+    void nextId_whenSingleThreaded_providesUniqueIds() {
+        final SnowflakeGenerator generator = new SnowflakeGenerator(1, Instant.now());
+        final int N_IDS_TO_GENERATE = 15_000;
+        TreeSet<Long> alreadyGenerated = new TreeSet<>();
+        for (int i = 0; i < N_IDS_TO_GENERATE; i++) {
+            long id = generator.nextId();
+            assertTrue(alreadyGenerated.add(id), "Duplicate id: " + id);
+        }
+    }
+
+    @Test
     void nextId_whenMultithreaded_providesUniqueIds() throws ExecutionException, InterruptedException {
         final SnowflakeGenerator generator = new SnowflakeGenerator(1, Instant.now());
 
@@ -85,39 +93,37 @@ class SnowflakeGeneratorTest {
                 return ids;
             });
         }
-        Map<Long, Long> registered = new WeakHashMap<>(N_IDS_TO_GENERATE * N_LOGICAL_CORES);
+        executor.shutdownNow();
+        TreeSet<Long> registered = new TreeSet<>();
         for (Future<Long[]> futureResult : futureResults) {
             for (Long id : futureResult.get()) {
-                Long found = registered.get(id);
-                if (found != null) {
-                    fail("Collision! ID 1 = " + BinaryUtil.toFormattedBinary(found, generator.getRules()) + ", ID 2 = " + BinaryUtil.toFormattedBinary(id, generator.getRules()));
-                }
-                registered.put(id, id);
+                assertTrue(registered.add(id), "Duplicate id: " + id);
             }
         }
     }
-
-
 
     @Test
     void nextId_whenMultithreaded_providesUniqueIds_debug() throws ExecutionException, InterruptedException {
         final SnowflakeGenerator generator = new SnowflakeGenerator(1, Instant.now());
 
         final int N_LOGICAL_CORES = Runtime.getRuntime().availableProcessors();
-        final int N_IDS_TO_GENERATE = 5000;
-        Future<Long[]>[] futureResults = new Future[N_LOGICAL_CORES];
-        ExecutorService executor = Executors.newFixedThreadPool(N_LOGICAL_CORES);
+        final int N_IDS_TO_GENERATE = 500;
         ConcurrentLinkedQueue<String> debugs = new ConcurrentLinkedQueue<>();
+        ArrayList<Callable<Long[]>> callables = new ArrayList<>(N_LOGICAL_CORES);
         for (int i = 0; i < N_LOGICAL_CORES; i++) {
-            futureResults[i] = executor.submit(new Caller(i, debugs, N_IDS_TO_GENERATE, generator));
+            callables.add(new Caller(i, debugs, N_IDS_TO_GENERATE, generator));
         }
-        Map<Long, Long> registered = new WeakHashMap<>(N_IDS_TO_GENERATE * N_LOGICAL_CORES);
-        for (int thread = 0; thread < futureResults.length; thread++) {
-            Future<Long[]> futureResult = futureResults[thread];
+        ExecutorService executor = Executors.newFixedThreadPool(N_LOGICAL_CORES);
+        List<Future<Long[]>> futureResults = executor.invokeAll(callables);
+        TreeSet<String> sortedEvents = new TreeSet<>(debugs);
+
+        Map<Long, Long> registered = new TreeMap<>();
+        for (int thread = 0; thread < futureResults.size(); thread++) {
+            Future<Long[]> futureResult = futureResults.get(thread);
             for (Long id : futureResult.get()) {
                 Long found = registered.get(id);
                 if (found != null) {
-                    debugs.forEach(System.out::println);
+                    sortedEvents.forEach(System.out::println);
                     fail("Collision! ID 1 = " + BinaryUtil.toFormattedBinary(found, generator.getRules()) + ", ID 2 = " + BinaryUtil.toFormattedBinary(id, generator.getRules()) + " in thread #" + thread);
                 }
                 registered.put(id, id);
@@ -143,7 +149,7 @@ class SnowflakeGeneratorTest {
             Long[] ids = new Long[N_IDS_TO_GENERATE];
             for (int j = 0; j < N_IDS_TO_GENERATE; j++) {
                 ids[j] = generator.nextId();
-                ALL_GENERATED.add(THREAD_ID + BinaryUtil.toFormattedBinary(ids[j], generator.getRules()));
+                ALL_GENERATED.add(System.nanoTime() + ": " + THREAD_ID + BinaryUtil.toFormattedBinary(ids[j], generator.getRules()));
             }
             return ids;
         }

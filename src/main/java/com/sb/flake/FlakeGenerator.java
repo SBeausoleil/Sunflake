@@ -2,7 +2,11 @@ package com.sb.flake;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -37,7 +41,7 @@ public class FlakeGenerator {
      * Previous timestamp already shifted by 41 bits
      */
     private final AtomicLong previousTimestamp;
-    private final AtomicLong sequence;
+    private final AtomicInteger sequence;
 
     public FlakeGenerator(Instant epoch, int workerId, GenerationRules rules) {
         long maskedId = workerId & rules.getWorkerIdMask();
@@ -48,13 +52,13 @@ public class FlakeGenerator {
 
         this.EPOCH = epoch;
         this.RULES = rules;
-        this.SHIFTED_MACHINE_ID = (long) maskedId << rules.getWorkerIdShift();
+        this.SHIFTED_MACHINE_ID = maskedId << rules.getWorkerIdShift();
         long msSinceEpoch = System.currentTimeMillis() - epoch.toEpochMilli();
         this.INSTANCE_START_TIME = rules.getTimeUnit().convert(msSinceEpoch, TimeUnit.MILLISECONDS);
         this.CLOCK_EPOCH = System.nanoTime();
 
         this.previousTimestamp = new AtomicLong(this.INSTANCE_START_TIME);
-        this.sequence = new AtomicLong(0);
+        this.sequence = new AtomicInteger(0);
     }
 
     public long nextId() {
@@ -76,7 +80,7 @@ public class FlakeGenerator {
         * Loop instead of simple condition in case the queue to get a sequence number at the next timestamp
         * was larger than the max possible sequence number for the rules of the generator.
          */
-        while (maskedSequenceNumber < sequenceNumber) {
+        while (maskedSequenceNumber != sequenceNumber) {
             id = awaitNextTimestamp(id);
             sequenceNumber = sequence.getAndIncrement();
             maskedSequenceNumber = sequenceNumber & this.RULES.SEQUENCE_MASK;
