@@ -9,35 +9,35 @@ import java.time.Instant;
 public class FlakeGeneratorBenchmark {
 
     @Benchmark
-    @Fork(value = 1, warmups = 1)
-    @Warmup(iterations = 1, time = 1)
-    @Measurement(iterations = 1, time =  1)
+    @Fork(value = 5)
+    //@Warmup(iterations = 1, time = 1)
+    //@Measurement(iterations = 1, time =  1)
     public void measureSingleCall_1Thread(Blackhole bh, HighFrequencyExecutionPlan plan) {
         bh.consume(plan.generator.nextId());
     }
 
     @Benchmark
-    @Fork(value = 1, warmups = 1)
-    @Warmup(iterations = 1, time = 1)
-    @Measurement(iterations = 1, time =  1)
+    @Fork(value = 5)
+    //@Warmup(iterations = 1, time = 1)
+    //@Measurement(iterations = 1, time =  1)
     @Threads(2)
     public void measureSingleCall_2Threads(Blackhole bh, HighFrequencyExecutionPlan plan) {
         bh.consume(plan.generator.nextId());
     }
 
     @Benchmark
-    @Fork(value = 1, warmups = 1)
-    @Warmup(iterations = 1, time = 1)
-    @Measurement(iterations = 1, time =  1)
+    @Fork(value = 5)
+    //@Warmup(iterations = 1, time = 1)
+    //@Measurement(iterations = 1, time =  1)
     @Threads(4)
     public void measureSingleCall_4Threads(Blackhole bh, HighFrequencyExecutionPlan plan) {
         bh.consume(plan.generator.nextId());
     }
 
     @Benchmark
-    @Fork(value = 1, warmups = 1)
-    @Warmup(iterations = 1, time = 1)
-    @Measurement(iterations = 1, time =  1)
+    @Fork(value = 5)
+    //@Warmup(iterations = 1, time = 1)
+    //@Measurement(iterations = 1, time =  1)
     @Threads(12)
     public void measureSingleCall_12Threads(Blackhole bh, HighFrequencyExecutionPlan plan) {
         bh.consume(plan.generator.nextId());
