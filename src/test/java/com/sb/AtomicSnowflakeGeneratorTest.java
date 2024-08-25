@@ -12,6 +12,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class AtomicSnowflakeGeneratorTest extends FlakeGeneratorTestSuite {
     @Override
     FlakeGenerator makeGenerator(Instant epoch, long machineId) {
-        return new AtomicFlakeGenerator(epoch, machineId, Snowflake.RULES);
+        return new AtomicFlakeGenerator(epoch, machineId, GenerationRules.SNOWFLAKE);
     }
 }

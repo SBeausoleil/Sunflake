@@ -8,6 +8,12 @@ import java.util.function.IntFunction;
 public class GenerationRules implements Serializable {
     protected static final long serialVersionUID = 1L;
 
+    public static final GenerationRules SNOWFLAKE = new GenerationRules(12, 10, 41, false, false, TimeUnit.MILLISECONDS);
+    public static final GenerationRules VERY_HIGH_FREQUENCY = new GenerationRulesBuilder()
+            .setSequenceSize(32)
+            .setWorkerIdSize(1)
+            .createGenerationRules();
+
     protected final int SEQUENCE_SIZE;
     protected final int WORKER_ID_SIZE;
     protected final int TIMESTAMP_SIZE;
