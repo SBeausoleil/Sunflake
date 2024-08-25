@@ -1,6 +1,5 @@
-package com.sb;
+package com.sb.flake;
 
-import com.sb.flake.*;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;

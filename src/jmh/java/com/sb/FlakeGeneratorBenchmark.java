@@ -12,41 +12,45 @@ public class FlakeGeneratorBenchmark {
     @Fork(value = 1, warmups = 1)
     @Warmup(iterations = 1, time = 1)
     @Measurement(iterations = 1, time =  1)
-    public void measureSingleCall(Blackhole bh, HighFrequencyExecutionPlan plan) {
+    public void measureSingleCall_1Thread(Blackhole bh, HighFrequencyExecutionPlan plan) {
         bh.consume(plan.generator.nextId());
     }
 
-    /*@Benchmark
-    public void measureNextId_singleThread(Blackhole bh, HighFrequencyExecutionPlan plan) {
-        final int N_IDS_TO_GENERATE = 15_000;
-        long heap = Long.MIN_VALUE;
-        for (int i = 0; i < N_IDS_TO_GENERATE; i++) {
-            heap ^= plan.generator.nextId();
-        }
-        bh.consume(heap);
+    @Benchmark
+    @Fork(value = 1, warmups = 1)
+    @Warmup(iterations = 1, time = 1)
+    @Measurement(iterations = 1, time =  1)
+    @Threads(2)
+    public void measureSingleCall_2Threads(Blackhole bh, HighFrequencyExecutionPlan plan) {
+        bh.consume(plan.generator.nextId());
     }
 
     @Benchmark
-    public void measureNextId_twoThreads(Blackhole bh) {
-        FlakeGenerator generator = makeGenerator(Instant.EPOCH, 0L, GenerationRules.VERY_HIGH_FREQUENCY);
-        final int N_IDS_TO_GENERATE = 15_000;
-        long heap = Long.MIN_VALUE;
-        for (int i = 0; i < N_IDS_TO_GENERATE; i++) {
-            heap ^= generator.nextId();
-        }
-        bh.consume(heap);
-    }*/
+    @Fork(value = 1, warmups = 1)
+    @Warmup(iterations = 1, time = 1)
+    @Measurement(iterations = 1, time =  1)
+    @Threads(4)
+    public void measureSingleCall_4Threads(Blackhole bh, HighFrequencyExecutionPlan plan) {
+        bh.consume(plan.generator.nextId());
+    }
+
+    @Benchmark
+    @Fork(value = 1, warmups = 1)
+    @Warmup(iterations = 1, time = 1)
+    @Measurement(iterations = 1, time =  1)
+    @Threads(12)
+    public void measureSingleCall_12Threads(Blackhole bh, HighFrequencyExecutionPlan plan) {
+        bh.consume(plan.generator.nextId());
+    }
 
     @State(Scope.Benchmark)
     public static class HighFrequencyExecutionPlan {
-        @Param({"Atomic", "Atoref", "Synchronized"})
+        @Param({"Atoref", "Synchronized"})
         public String implementation;
         public FlakeGenerator generator;
 
         private FlakeGenerator fromImplementation(String implementation) {
             switch (implementation) {
-                case "Atomic":
-                    return new AtomicFlakeGenerator(Instant.now(), 1L, GenerationRules.VERY_HIGH_FREQUENCY);
                 case "Atoref":
                     return new AtorefFlakeGenerator(Instant.now(), 1L, GenerationRules.VERY_HIGH_FREQUENCY);
                 case "Synchronized":

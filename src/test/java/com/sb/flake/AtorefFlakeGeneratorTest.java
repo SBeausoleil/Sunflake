@@ -1,8 +1,4 @@
-package com.sb;
-
-import com.sb.flake.AtorefFlakeGenerator;
-import com.sb.flake.FlakeGenerator;
-import com.sb.flake.GenerationRules;
+package com.sb.flake;
 
 import java.time.Instant;
 

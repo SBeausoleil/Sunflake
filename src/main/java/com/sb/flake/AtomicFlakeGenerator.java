@@ -7,12 +7,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
+ * WARNING UNSTABLE IN STRESSED MULTITHREADS DO NOT USE AS OF 1.0
+ * <p>
  * A Flake ID generator that support custom generation rules.
  * <p>
  *     Internally, all timestamps shared between methods are already masked and shifted.
  * </p>
  */
-public class AtomicFlakeGenerator extends FlakeGenerator {
+class AtomicFlakeGenerator extends FlakeGenerator {
     protected final long SHIFTED_MACHINE_ID;
     /**
      * Time in the time unit of this generator since the real epoch when this generator was instantiated.
