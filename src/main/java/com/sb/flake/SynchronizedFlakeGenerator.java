@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * A Flake ID generator that support custom generation rules.
+ * A Flake ID generator that support custom generation rules. This implementation is thread-safe.
  * <p>
  *     Internally, all timestamps shared between methods are already masked and shifted.
  * </p>

@@ -14,13 +14,13 @@ public abstract class FlakeGeneratorTestSuite {
 
     @Test
     void nextId_setsBitsCorrectly() {
-        final int MACHINE_ID = ThreadLocalRandom.current().nextInt() & ((1 << AtomicSnowflakeGenerator.MACHINE_ID_LENGTH) - 1);
+        final int MACHINE_ID = ThreadLocalRandom.current().nextInt() & ((1 << GenerationRules.SNOWFLAKE.WORKER_ID_SIZE) - 1);
         FlakeGenerator generator = makeGenerator(Instant.now(), MACHINE_ID);
 
         long snowflake = generator.nextId();
 
         FlakeData data = generator.parse(snowflake);
-        String flakeDefinition = " Snowflake was: " + snowflake + "(" + BinaryUtil.toFormattedBinary(snowflake, AtomicSnowflakeGenerator.RULES) + "), parsed: " + data;
+        String flakeDefinition = " Snowflake was: " + snowflake + "(" + BinaryUtil.toFormattedBinary(snowflake, GenerationRules.SNOWFLAKE) + "), parsed: " + data;
         assertFalse(data.getSinceEpoch().isNegative(), "Negative duration." + flakeDefinition);
         assertTrue(data.getSinceEpoch().toMillis() <= 2, "Weird duration on single call." + flakeDefinition); // Allow 2ms room for very slow computers
         assertEquals(MACHINE_ID, data.getWorkerId(), "Invalid machineId." + flakeDefinition);
@@ -37,7 +37,7 @@ public abstract class FlakeGeneratorTestSuite {
             long snowflake = generator.nextId();
 
             FlakeData data = generator.parse(snowflake);
-            String flakeDefinition = " Snowflake was: " + snowflake + "(" + BinaryUtil.toFormattedBinary(snowflake, AtomicSnowflakeGenerator.RULES) + "), parsed: " + data;
+            String flakeDefinition = " Snowflake was: " + snowflake + "(" + BinaryUtil.toFormattedBinary(snowflake, GenerationRules.SNOWFLAKE) + "), parsed: " + data;
             assertEquals(LOW_MACHINE_ID, data.getWorkerId(), "Invalid machineId." + flakeDefinition);
         }
     }
