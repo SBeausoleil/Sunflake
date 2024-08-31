@@ -1,10 +1,7 @@
 package com.sb.flake;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * A Flake ID generator that support custom generation rules. This implementation is thread-safe.
