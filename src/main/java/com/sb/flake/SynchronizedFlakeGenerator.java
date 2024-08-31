@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * A Flake ID generator that support custom generation rules. This implementation is thread-safe.
  * <p>
- *     Internally, all timestamps shared between methods are already masked and shifted.
+ * Internally, all timestamps shared between methods are already masked and shifted.
  * </p>
  */
 public class SynchronizedFlakeGenerator extends FlakeGenerator {
@@ -26,9 +26,9 @@ public class SynchronizedFlakeGenerator extends FlakeGenerator {
      * we maintain an internal start time of the clock to allow later establishing
      * of the actual real timestamp with the following calculation:
      * <p>
-     *     <code>
-     *         toTimeUnit(CLOCK_TIME - CLOCK_EPOCH) + INSTANCE_START_TIME = TIMESTAMP
-     *     </code>
+     * <code>
+     * toTimeUnit(CLOCK_TIME - CLOCK_EPOCH) + INSTANCE_START_TIME = TIMESTAMP
+     * </code>
      * </p>
      */
     private final long CLOCK_EPOCH;
@@ -56,7 +56,6 @@ public class SynchronizedFlakeGenerator extends FlakeGenerator {
     }
 
     public synchronized long nextId() {
-        // TODO detect time loop
         long id = shiftedMonotonicTime();
         if (this.previousTimestamp != id) {
             resetSequence(id);
@@ -70,9 +69,9 @@ public class SynchronizedFlakeGenerator extends FlakeGenerator {
         long sequenceNumber = sequence++;
         long maskedSequenceNumber = sequenceNumber & this.RULES.SEQUENCE_MASK;
         /* If the maskedSequenceNumber is smaller than the original sequence number,
-        * it means that the sequence number is larger than the max possible sequence number for the rules of the generator
-        * Loop instead of simple condition in case the queue to get a sequence number at the next timestamp
-        * was larger than the max possible sequence number for the rules of the generator.
+         * it means that the sequence number is larger than the max possible sequence number for the rules of the generator
+         * Loop instead of simple condition in case the queue to get a sequence number at the next timestamp
+         * was larger than the max possible sequence number for the rules of the generator.
          */
         while (maskedSequenceNumber != sequenceNumber) {
             id = awaitNextTimestamp(id);
@@ -84,15 +83,10 @@ public class SynchronizedFlakeGenerator extends FlakeGenerator {
     }
 
     private long shiftedMonotonicTime() {
-        //System.out.println();
         long ts = System.nanoTime() - CLOCK_EPOCH;
         ts = this.RULES.getTimeUnit().convert(ts, TimeUnit.NANOSECONDS);
-        //System.out.println("TS: " + ts + " (" + toUnformattedBinary(ts) + ")");
         ts += INSTANCE_START_TIME;
-        //System.out.println("Adjusted ts: " + ts + " (" + toUnformattedBinary(ts) + ")");
         ts <<= this.RULES.TIMESTAMP_SHIFT;
-        //System.out.println("Shifted (" + this.RULES.TIMESTAMP_SHIFT + ") ts: " + ts + " (" + toUnformattedBinary(ts) + ")");
-        //System.out.println(toFormattedBinary(ts, this.RULES));
         ts &= this.RULES.SIGN_MASK;
         return ts;
     }
@@ -108,9 +102,7 @@ public class SynchronizedFlakeGenerator extends FlakeGenerator {
     }
 
     private void resetSequence(long newTs) {
-        if (newTs > this.previousTimestamp) {
-            this.previousTimestamp = newTs;
-            this.sequence = 0;
-        }
+        this.previousTimestamp = newTs;
+        this.sequence = 0;
     }
 }
