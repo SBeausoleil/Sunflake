@@ -1,14 +1,13 @@
 package com.sb.flake;
 
 import java.io.Serializable;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.function.IntFunction;
 
 public class GenerationRules implements Serializable {
     protected static final long serialVersionUID = 1L;
 
-    public static final GenerationRules SNOWFLAKE = new GenerationRules(12, 10, 41, false, false, TimeUnit.MILLISECONDS);
+    public static final GenerationRules SNOWFLAKE = new GenerationRules(12, 10, 41, false, TimeUnit.MILLISECONDS);
+    public static final GenerationRules SONYFLAKE = new GenerationRules(8, 16, 39, false, TimeUnit.MILLISECONDS);
     public static final GenerationRules VERY_HIGH_FREQUENCY = new GenerationRulesBuilder()
             .setSequenceSize(32)
             .setWorkerIdSize(1)
@@ -26,7 +25,6 @@ public class GenerationRules implements Serializable {
      * set to zero (ALLOW_USAGE_OF_SIGN_BIT = false) the most significant bit.
      */
     protected final long SIGN_MASK;
-    protected final boolean ALLOW_TS_LOOPING;
 
     protected final long SEQUENCE_MASK;
     protected final long WORKER_ID_MASK;
@@ -44,7 +42,7 @@ public class GenerationRules implements Serializable {
      * @param workerIdSize how many bits to attribute to the worker id (machine ID in Snowflake)
      */
     public GenerationRules(int sequenceSize, int workerIdSize) {
-        this(sequenceSize, workerIdSize, false, false);
+        this(sequenceSize, workerIdSize, false);
     }
 
     /**
@@ -53,16 +51,15 @@ public class GenerationRules implements Serializable {
      * @param workerIdSize how many bits to attribute to the worker id (machine ID in Snowflake)
      * @param allowUsageOfSignBit if the sign bit may be used.
      */
-    public GenerationRules(int sequenceSize, int workerIdSize, boolean allowUsageOfSignBit, boolean allowTsLooping) {
+    public GenerationRules(int sequenceSize, int workerIdSize, boolean allowUsageOfSignBit) {
         this(sequenceSize,
                 workerIdSize,
                 computeRemainingBits(sequenceSize, workerIdSize, allowUsageOfSignBit),
                 allowUsageOfSignBit,
-                allowTsLooping,
                 TimeUnit.MILLISECONDS);
     }
     
-    public GenerationRules(int sequenceSize, int workerIdSize, int timestampSize, boolean allowUsageOfSignBit, boolean allowTsLooping, TimeUnit timeUnit) {
+    public GenerationRules(int sequenceSize, int workerIdSize, int timestampSize, boolean allowUsageOfSignBit, TimeUnit timeUnit) {
         this.SEQUENCE_SIZE = sequenceSize;
         this.WORKER_ID_SIZE = workerIdSize;
         this.TIMESTAMP_SIZE = timestampSize;
@@ -72,7 +69,6 @@ public class GenerationRules implements Serializable {
         } else {
             this.SIGN_MASK = ~(1L << 63);
         }
-        this.ALLOW_TS_LOOPING = allowTsLooping;
         this.TIME_UNIT = timeUnit;
 
         int totalBits = SEQUENCE_SIZE + WORKER_ID_SIZE + TIMESTAMP_SIZE;
@@ -133,10 +129,6 @@ public class GenerationRules implements Serializable {
 
     public boolean canUseSignBit() {
         return ALLOW_USAGE_OF_SIGN_BIT;
-    }
-
-    public boolean canLoopTimestamp() {
-        return ALLOW_TS_LOOPING;
     }
 
     public TimeUnit getTimeUnit() {

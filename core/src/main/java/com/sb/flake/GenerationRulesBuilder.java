@@ -10,7 +10,6 @@ public class GenerationRulesBuilder {
     private Integer sequenceSize;
     private Integer workerIdSize;
     private boolean allowUsageOfSignBit = false;
-    private boolean allowTsLooping = false;
     private Integer timestampSize;
     private TimeUnit timeUnit = TimeUnit.MILLISECONDS;
 
@@ -21,16 +20,6 @@ public class GenerationRulesBuilder {
 
     public GenerationRulesBuilder setWorkerIdSize(int workerIdSize) {
         this.workerIdSize = workerIdSize;
-        return this;
-    }
-
-    public GenerationRulesBuilder setAllowUsageOfSignBit(boolean allowUsageOfSignBit) {
-        this.allowUsageOfSignBit = allowUsageOfSignBit;
-        return this;
-    }
-
-    public GenerationRulesBuilder setAllowTsLooping(boolean allowTsLooping) {
-        this.allowTsLooping = allowTsLooping;
         return this;
     }
 
@@ -71,6 +60,6 @@ public class GenerationRulesBuilder {
                 throw new IllegalStateException("The builder requires zero, two, or all three sizes set!");
             }
         }
-        return new GenerationRules(rawSequenceSize, rawWorkerIdSize, rawTimestampSize, allowUsageOfSignBit, allowTsLooping, timeUnit);
+        return new GenerationRules(rawSequenceSize, rawWorkerIdSize, rawTimestampSize, allowUsageOfSignBit, timeUnit);
     }
 }
