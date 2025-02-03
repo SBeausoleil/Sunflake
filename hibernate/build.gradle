@@ -9,9 +9,12 @@ repositories {
 dependencies {
     implementation(project(":core"))
     implementation group: 'org.hibernate.orm', name: 'hibernate-core', version: '6.6.0.Final'
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.16'
 
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
+
+    testImplementation group: 'com.h2database', name: 'h2', version: '2.3.232'
 }
 
 tasks.test {

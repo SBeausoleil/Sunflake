@@ -1,20 +1,29 @@
 package com.sb.flake;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import org.hibernate.annotations.GenericGenerator;
+import com.sb.flake.annotations.FlakePreset;
+import com.sb.flake.annotations.FlakeSequence;
+import jakarta.persistence.*;
 
 @Entity
+@Table(name = "test_entity")
 public class TestEntity {
     @Id
-    @GeneratedValue(generator = "snowflake")
+    //@GeneratedValue(strategy = GenerationType.IDENTITY)
+    @FlakeSequence(preset = FlakePreset.SNOWFLAKE)
     private Long id;
     private String name;
 
-    public TestEntity() {}
+    TestEntity() {}
 
     public TestEntity(String name) {
         this.name = name;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
     }
 }

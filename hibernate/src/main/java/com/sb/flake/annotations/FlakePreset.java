@@ -12,4 +12,8 @@ public enum FlakePreset {
     FlakePreset(GenerationRules rules) {
         this.rules = rules;
     }
+
+    public GenerationRules getRules() {
+        return rules;
+    }
 }
