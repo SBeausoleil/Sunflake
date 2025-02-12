@@ -11,7 +11,7 @@ public class GenerationRules implements Serializable {
     public static final GenerationRules VERY_HIGH_FREQUENCY = new GenerationRulesBuilder()
             .setSequenceSize(32)
             .setWorkerIdSize(1)
-            .createGenerationRules();
+            .build();
 
     protected final int SEQUENCE_SIZE;
     protected final int WORKER_ID_SIZE;

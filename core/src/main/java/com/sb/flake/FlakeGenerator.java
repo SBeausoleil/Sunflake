@@ -1,13 +1,14 @@
 package com.sb.flake;
 
+import java.io.Serializable;
 import java.time.Duration;
 import java.time.Instant;
 
-public abstract class FlakeGenerator {
+public abstract class FlakeGenerator implements Serializable {
     protected final Instant EPOCH;
     protected final GenerationRules RULES;
 
-    public FlakeGenerator(Instant epoch, GenerationRules rules) {
+    protected FlakeGenerator(Instant epoch, GenerationRules rules) {
         this.EPOCH = epoch;
         this.RULES = rules;
     }

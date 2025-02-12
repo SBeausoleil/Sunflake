@@ -6,12 +6,14 @@ public class GenerationRulesBuilder {
     public static final int DEFAULT_SEQUENCE_SIZE = 12;
     public static final int DEFAULT_WORKER_ID_SIZE = 10;
     public static final int DEFAULT_TIMESTAMP_SIZE = 41;
+    public static final boolean DEFAULT_ALLOW_USAGE_OF_SIGN_BIT = false;
+    public static final TimeUnit DEFAULT_TIMEUNIT = TimeUnit.MILLISECONDS;
 
     private Integer sequenceSize;
     private Integer workerIdSize;
-    private boolean allowUsageOfSignBit = false;
     private Integer timestampSize;
-    private TimeUnit timeUnit = TimeUnit.MILLISECONDS;
+    private boolean allowUsageOfSignBit = DEFAULT_ALLOW_USAGE_OF_SIGN_BIT;
+    private TimeUnit timeUnit = DEFAULT_TIMEUNIT;
 
     public GenerationRulesBuilder setSequenceSize(int sequenceSize) {
         this.sequenceSize = sequenceSize;
@@ -33,7 +35,12 @@ public class GenerationRulesBuilder {
         return this;
     }
 
-    public GenerationRules createGenerationRules() {
+    public GenerationRulesBuilder setAllowUsageOfSignBit(boolean allowUsageOfSignBit) {
+        this.allowUsageOfSignBit = allowUsageOfSignBit;
+        return this;
+    }
+
+    public GenerationRules build() {
         int rawSequenceSize, rawWorkerIdSize, rawTimestampSize;
         if (this.sequenceSize != null && this.workerIdSize != null && this.timestampSize != null) {
             rawSequenceSize = this.sequenceSize;

@@ -5,7 +5,7 @@ import com.sb.flake.annotations.FlakeSequence;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "test_entity")
+@Table(name = "test_entity_foobar")
 public class TestEntity {
     @Id
     //@GeneratedValue(strategy = GenerationType.IDENTITY)

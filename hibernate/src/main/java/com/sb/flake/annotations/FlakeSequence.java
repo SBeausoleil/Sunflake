@@ -14,7 +14,6 @@ import static java.lang.annotation.ElementType.METHOD;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({METHOD, FIELD})
 public @interface FlakeSequence {
-    String table() default "";
     GenerationRules rules() default @GenerationRules;
     FlakePreset preset() default FlakePreset.SNOWFLAKE;
 }

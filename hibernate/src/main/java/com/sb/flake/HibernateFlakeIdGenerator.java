@@ -6,6 +6,7 @@ import org.hibernate.generator.AnnotationBasedGenerator;
 import org.hibernate.generator.BeforeExecutionGenerator;
 import org.hibernate.generator.EventType;
 import org.hibernate.generator.GeneratorCreationContext;
+import org.hibernate.mapping.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,14 +19,14 @@ import java.util.concurrent.ConcurrentHashMap;
 public class HibernateFlakeIdGenerator implements AnnotationBasedGenerator<FlakeSequence>, BeforeExecutionGenerator {
     private static final Logger log = LoggerFactory.getLogger(HibernateFlakeIdGenerator.class);
 
-    private static final ConcurrentHashMap<Class<?>, FlakeGenerator> generators = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Table, FlakeGenerator> generators = new ConcurrentHashMap<>();
 
-    FlakeGenerator generator;
+    private FlakeGenerator generator;
 
     @Override
     public void initialize(FlakeSequence annotation, Member member, GeneratorCreationContext context) {
         // Read https://docs.jboss.org/hibernate/orm/6.5/javadocs/org/hibernate/generator/AnnotationBasedGenerator.html#initialize(A,java.lang.reflect.Member,org.hibernate.generator.GeneratorCreationContext)
-        this.generator = makeGenerator(member.getDeclaringClass(), annotation);
+        this.generator = makeGenerator(context.getPersistentClass().getRootTable(), annotation);
     }
 
     @Override
@@ -40,8 +41,8 @@ public class HibernateFlakeIdGenerator implements AnnotationBasedGenerator<Flake
         return generator.nextId();
     }
 
-    private static synchronized FlakeGenerator makeGenerator(Class<?> clazz, FlakeSequence annotation) {
-        return generators.computeIfAbsent(clazz, c -> new SynchronizedFlakeGenerator(
+    private static synchronized FlakeGenerator makeGenerator(Table table, FlakeSequence annotation) {
+        return generators.computeIfAbsent(table, c -> new SynchronizedFlakeGenerator(
                 LocalDate.of(2025, 1, 1).atStartOfDay().toInstant(ZoneOffset.UTC),
                 1,
                 annotation.preset().getRules()

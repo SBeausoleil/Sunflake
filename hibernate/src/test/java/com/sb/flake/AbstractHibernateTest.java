@@ -10,7 +10,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 
-public class AbstractHibernateTest {
+class AbstractHibernateTest {
     protected static SessionFactory sessionFactory;
     protected Session session;
     protected Transaction transaction;
