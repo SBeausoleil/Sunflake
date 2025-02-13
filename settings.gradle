@@ -1,2 +1,5 @@
 rootProject.name = "Sunflake"
 include("core", "hibernate")
+
+include(":helius-commons")
+project(":helius-commons").projectDir = file("../helius-commons")

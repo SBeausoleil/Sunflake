@@ -11,8 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Member;
-import java.time.LocalDate;
-import java.time.ZoneOffset;
 import java.util.EnumSet;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -25,8 +23,7 @@ public class HibernateFlakeIdGenerator implements AnnotationBasedGenerator<Flake
 
     @Override
     public void initialize(FlakeSequence annotation, Member member, GeneratorCreationContext context) {
-        // Read https://docs.jboss.org/hibernate/orm/6.5/javadocs/org/hibernate/generator/AnnotationBasedGenerator.html#initialize(A,java.lang.reflect.Member,org.hibernate.generator.GeneratorCreationContext)
-        this.generator = makeGenerator(context.getPersistentClass().getRootTable(), annotation);
+        this.generator = makeGenerator(context.getPersistentClass().getRootTable());
     }
 
     @Override
@@ -41,11 +38,11 @@ public class HibernateFlakeIdGenerator implements AnnotationBasedGenerator<Flake
         return generator.nextId();
     }
 
-    private static synchronized FlakeGenerator makeGenerator(Table table, FlakeSequence annotation) {
+    private static synchronized FlakeGenerator makeGenerator(Table table) {
         return generators.computeIfAbsent(table, c -> new SynchronizedFlakeGenerator(
-                LocalDate.of(2025, 1, 1).atStartOfDay().toInstant(ZoneOffset.UTC),
+                SunflakeConfiguration.getEpochProperty(),
                 1,
-                annotation.preset().getRules()
+                SunflakeConfiguration.getGlobalRules()
         ));
     }
 }

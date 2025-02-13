@@ -1,6 +1,4 @@
-package com.sb.flake.annotations;
-
-import com.sb.flake.GenerationRules;
+package com.sb.flake;
 
 public enum FlakePreset {
     SNOWFLAKE(GenerationRules.SNOWFLAKE),

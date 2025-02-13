@@ -11,6 +11,8 @@ repositories {
 }
 
 dependencies {
+    implementation(project(":helius-commons"))
+
     jmhImplementation group: 'org.openjdk.jmh', name: 'jmh-core', version: '1.37'
     jmhAnnotationProcessor  group: 'org.openjdk.jmh', name: 'jmh-generator-annprocess', version: '1.37'
 
