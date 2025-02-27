@@ -1,7 +1,6 @@
 package com.sb.flake;
 
 import java.time.Instant;
-import java.util.concurrent.TimeUnit;
 
 /**
  * A Flake ID generator that support custom generation rules. This implementation is thread-safe.
@@ -11,24 +10,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class SynchronizedFlakeGenerator extends FlakeGenerator {
 
-    protected final long SHIFTED_MACHINE_ID;
-    /**
-     * Time in the time unit of this generator since the real epoch when this generator was instantiated.
-     */
-    private final long INSTANCE_START_TIME;
-    /**
-     * To avoid issues with leap seconds and backward flowing time,
-     * this generator uses a monotonical clock.
-     * Since the relation between the epoch of the clock and wall-time is unknown,
-     * we maintain an internal start time of the clock to allow later establishing
-     * of the actual real timestamp with the following calculation:
-     * <p>
-     * <code>
-     * toTimeUnit(CLOCK_TIME - CLOCK_EPOCH) + INSTANCE_START_TIME = TIMESTAMP
-     * </code>
-     * </p>
-     */
-    private final long CLOCK_EPOCH;
     /**
      * Previous timestamp already shifted by 41 bits
      */
@@ -36,18 +17,7 @@ public class SynchronizedFlakeGenerator extends FlakeGenerator {
     private long sequence;
 
     public SynchronizedFlakeGenerator(Instant epoch, long workerId, GenerationRules rules) {
-        super(epoch, rules);
-        long maskedId = workerId & rules.getWorkerIdMask();
-        if (maskedId != workerId) {
-            throw new IllegalArgumentException("Invalid workerId: " + workerId + " (too big). " +
-                    "WorkerId must be a " + rules.getWorkerSize() + " bits integer.");
-        }
-
-        this.SHIFTED_MACHINE_ID = maskedId << rules.getWorkerIdShift();
-        long msSinceEpoch = System.currentTimeMillis() - epoch.toEpochMilli();
-        this.INSTANCE_START_TIME = rules.getTimeUnit().convert(msSinceEpoch, TimeUnit.MILLISECONDS);
-        this.CLOCK_EPOCH = System.nanoTime();
-
+        super(epoch, workerId, rules);
         this.previousTimestamp = this.INSTANCE_START_TIME;
         this.sequence = 0L;
     }
@@ -58,7 +28,7 @@ public class SynchronizedFlakeGenerator extends FlakeGenerator {
             resetSequence(id);
         }
         id = insertSequence(id);
-        id |= this.SHIFTED_MACHINE_ID;
+        id |= this.SHIFTED_WORKER_ID;
         return id;
     }
 
@@ -77,15 +47,6 @@ public class SynchronizedFlakeGenerator extends FlakeGenerator {
         }
         id |= maskedSequenceNumber;
         return id;
-    }
-
-    private long shiftedMonotonicTime() {
-        long ts = System.nanoTime() - CLOCK_EPOCH;
-        ts = this.RULES.getTimeUnit().convert(ts, TimeUnit.NANOSECONDS);
-        ts += INSTANCE_START_TIME;
-        ts <<= this.RULES.TIMESTAMP_SHIFT;
-        ts &= this.RULES.SIGN_MASK;
-        return ts;
     }
 
     private long awaitNextTimestamp(long tsOnArrival) {

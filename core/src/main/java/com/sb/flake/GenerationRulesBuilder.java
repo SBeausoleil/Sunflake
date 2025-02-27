@@ -14,6 +14,7 @@ public class GenerationRulesBuilder {
     private Integer timestampSize;
     private boolean allowUsageOfSignBit = DEFAULT_ALLOW_USAGE_OF_SIGN_BIT;
     private TimeUnit timeUnit = DEFAULT_TIMEUNIT;
+    private Integer timeUnitsPerTick;
 
     public GenerationRulesBuilder setSequenceSize(int sequenceSize) {
         this.sequenceSize = sequenceSize;
@@ -40,8 +41,16 @@ public class GenerationRulesBuilder {
         return this;
     }
 
+    public GenerationRulesBuilder setTimeUnitsPerTick(int timeUnitsPerTick) {
+        this.timeUnitsPerTick = timeUnitsPerTick;
+        return this;
+    }
+
     public GenerationRules build() {
-        int rawSequenceSize, rawWorkerIdSize, rawTimestampSize;
+        int rawSequenceSize;
+        int rawWorkerIdSize;
+        int rawTimestampSize;
+
         if (this.sequenceSize != null && this.workerIdSize != null && this.timestampSize != null) {
             rawSequenceSize = this.sequenceSize;
             rawWorkerIdSize = this.workerIdSize;
@@ -67,6 +76,8 @@ public class GenerationRulesBuilder {
                 throw new IllegalStateException("The builder requires zero, two, or all three sizes set!");
             }
         }
-        return new GenerationRules(rawSequenceSize, rawWorkerIdSize, rawTimestampSize, allowUsageOfSignBit, timeUnit);
+
+        int rawTimeUnitsPerTick = this.timeUnitsPerTick != null ? this.timeUnitsPerTick : 1;
+        return new GenerationRules(rawSequenceSize, rawWorkerIdSize, rawTimestampSize, allowUsageOfSignBit, timeUnit, rawTimeUnitsPerTick);
     }
 }

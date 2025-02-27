@@ -6,8 +6,12 @@ import java.util.concurrent.TimeUnit;
 public class GenerationRules implements Serializable {
     protected static final long serialVersionUID = 1L;
 
-    public static final GenerationRules SNOWFLAKE = new GenerationRules(12, 10, 41, false, TimeUnit.MILLISECONDS);
-    public static final GenerationRules SONYFLAKE = new GenerationRules(8, 16, 39, false, TimeUnit.MILLISECONDS);
+    public static final GenerationRules SNOWFLAKE = new GenerationRules(12, 10, 41, false, TimeUnit.MILLISECONDS, 1);
+    public static final GenerationRules SONYFLAKE = new GenerationRules(8, 16, 39, false, TimeUnit.MILLISECONDS, 10);
+    /**
+     * Generation rules tolerating a single worker but with up to 2^32 new entries per millisecond.
+     * Mostly used for tests.
+     */
     public static final GenerationRules VERY_HIGH_FREQUENCY = new GenerationRulesBuilder()
             .setSequenceSize(32)
             .setWorkerIdSize(1)
@@ -17,6 +21,7 @@ public class GenerationRules implements Serializable {
     protected final int WORKER_ID_SIZE;
     protected final int TIMESTAMP_SIZE;
     protected final TimeUnit TIME_UNIT;
+    protected final int TIME_UNITS_PER_TICK;
     
     protected final boolean ALLOW_USAGE_OF_SIGN_BIT;
     /**
@@ -56,10 +61,10 @@ public class GenerationRules implements Serializable {
                 workerIdSize,
                 computeRemainingBits(sequenceSize, workerIdSize, allowUsageOfSignBit),
                 allowUsageOfSignBit,
-                TimeUnit.MILLISECONDS);
+                TimeUnit.MILLISECONDS, 1);
     }
     
-    public GenerationRules(int sequenceSize, int workerIdSize, int timestampSize, boolean allowUsageOfSignBit, TimeUnit timeUnit) {
+    public GenerationRules(int sequenceSize, int workerIdSize, int timestampSize, boolean allowUsageOfSignBit, TimeUnit timeUnit, int timeUnitsPerTick) {
         this.SEQUENCE_SIZE = sequenceSize;
         this.WORKER_ID_SIZE = workerIdSize;
         this.TIMESTAMP_SIZE = timestampSize;
@@ -70,6 +75,7 @@ public class GenerationRules implements Serializable {
             this.SIGN_MASK = ~(1L << 63);
         }
         this.TIME_UNIT = timeUnit;
+        this.TIME_UNITS_PER_TICK = timeUnitsPerTick;
 
         int totalBits = SEQUENCE_SIZE + WORKER_ID_SIZE + TIMESTAMP_SIZE;
         if ((allowUsageOfSignBit && totalBits > Long.SIZE)
