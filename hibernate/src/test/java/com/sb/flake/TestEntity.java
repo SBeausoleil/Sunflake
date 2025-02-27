@@ -1,6 +1,5 @@
 package com.sb.flake;
 
-import com.sb.flake.annotations.FlakePreset;
 import com.sb.flake.annotations.FlakeSequence;
 import jakarta.persistence.*;
 
@@ -13,7 +12,7 @@ public class TestEntity {
     private Long id;
     private String name;
 
-    TestEntity() {}
+    public TestEntity() {}
 
     public TestEntity(String name) {
         this.name = name;

@@ -1,5 +1,6 @@
 package com.sb.flake.annotations;
 
+import com.sb.flake.FlakePreset;
 import com.sb.flake.HibernateFlakeIdGenerator;
 import org.hibernate.annotations.IdGeneratorType;
 
