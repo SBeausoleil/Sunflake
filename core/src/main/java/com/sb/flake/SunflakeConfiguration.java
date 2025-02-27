@@ -6,14 +6,12 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Global default configuration for the Sunflake module.
+ * Global default configuration for the Sunflake module whn used with an ORM.
  */
 public class SunflakeConfiguration {
 
@@ -28,6 +26,8 @@ public class SunflakeConfiguration {
     public static final String SEQUENCE_SIZE = PREFIX + "sequenceSize";
     public static final String WORKER_ID_SIZE = PREFIX + "workerIdSize";
 
+    public static final String WORK_ID_SOURCE = PREFIX + "workerIdSource";
+
     public static final String TIMESTAMP = PREFIX + "timestamp.";
     public static final String TIMESTAMP_SIZE = TIMESTAMP + "size";
     public static final String TIMESTAMP_UNIT = TIMESTAMP + "unit";
@@ -35,6 +35,7 @@ public class SunflakeConfiguration {
     public static final String TIMESTAMP_ALLOW_USAGE_OF_SIGN_BIT = TIMESTAMP_UNIT + "allowUsageOfSignBit";
 
     private static GenerationRules globalRules = null;
+    private static Long workerId = null;
     private static Instant epoch;
 
     private SunflakeConfiguration() {
@@ -62,23 +63,56 @@ public class SunflakeConfiguration {
         return epoch;
     }
 
-    /**
-     * Set the rules that all new SunflakeProvider used by Hibernate will use.
-     *
-     * @param globalRules
-     */
-    public static synchronized void setGlobalRules(GenerationRules globalRules) {
-        globalRules = globalRules;
+    public static long getWorkerId() {
+        if (workerId == null) {
+            initialize();
+        }
+        return workerId;
     }
 
     private static synchronized void initialize() {
-        if (globalRules == null || epoch == null) {
+        if (globalRules == null || workerId == null || epoch == null) {
             try {
                 SmartProperties properties = readProperties();
                 readRules(properties);
+                readWorkerId(properties);
                 readEpoch(properties);
             } catch (IllegalArgumentException | DateTimeParseException e) {
                 throw new InitializationException(e);
+            }
+        }
+    }
+
+    private static void readRules(SmartProperties properties) {
+        if (globalRules == null) {
+            Optional<FlakePreset> preset = properties.getEnum(PRESET, FlakePreset.class);
+            globalRules = preset.map(FlakePreset::getRules)
+                    .orElseGet(() -> {
+                        var rules = new GenerationRulesBuilder();
+                        properties.ifIntPresent(SEQUENCE_SIZE, rules::setSequenceSize)
+                                .ifIntPresent(WORKER_ID_SIZE, rules::setWorkerIdSize)
+                                .ifIntPresent(TIMESTAMP_SIZE, rules::setTimestampSize)
+                                .ifBooleanPresent(TIMESTAMP_ALLOW_USAGE_OF_SIGN_BIT, rules::setAllowUsageOfSignBit)
+                                .ifEnumPresent(TIMESTAMP_UNIT, TimeUnit.class, rules::setTimeUnit);
+                        return rules.build();
+                    });
+        }
+    }
+
+    private static void readWorkerId(SmartProperties properties) {
+        if (workerId == null) {
+            String workerIdSourceClass = properties.getProperty(WORK_ID_SOURCE);
+            if (workerIdSourceClass != null) {
+                try {
+                    Class<?> clazz = Class.forName(workerIdSourceClass);
+                    WorkerIdSupplier supplier = (WorkerIdSupplier) clazz.getMethod("getInstance", SmartProperties.class)
+                            .invoke(null, readProperties());
+                    workerId = supplier.getWorkerId(globalRules.getWorkerSize());
+                } catch (Exception e) {
+                    throw new InitializationException("Exception while reading the worker ID from the class: " + workerIdSourceClass, e);
+                }
+            } else {
+                throw new InitializationException("Worker ID source is not set. Set a worker ID source for the property " + WORK_ID_SOURCE + " in the Sunflake configuration file.");
             }
         }
     }
@@ -97,22 +131,6 @@ public class SunflakeConfiguration {
             } else {
                 throw new InitializationException("Epoch property is not set. Set an epoch for the property " + EPOCH_PROPERTY + " in the Sunflake configuration file.");
             }
-        }
-    }
-
-    private static void readRules(SmartProperties properties) {
-        if (globalRules == null) {
-            Optional<FlakePreset> preset = properties.getEnum(PRESET, FlakePreset.class);
-            globalRules = preset.map(FlakePreset::getRules)
-                    .orElseGet(() -> {
-                        var rules = new GenerationRulesBuilder();
-                        properties.ifIntPresent(SEQUENCE_SIZE, rules::setSequenceSize)
-                                .ifIntPresent(WORKER_ID_SIZE, rules::setWorkerIdSize)
-                                .ifIntPresent(TIMESTAMP_SIZE, rules::setTimestampSize)
-                                .ifBooleanPresent(TIMESTAMP_ALLOW_USAGE_OF_SIGN_BIT, rules::setAllowUsageOfSignBit)
-                                .ifEnumPresent(TIMESTAMP_UNIT, TimeUnit.class, rules::setTimeUnit);
-                        return rules.build();
-                    });
         }
     }
 

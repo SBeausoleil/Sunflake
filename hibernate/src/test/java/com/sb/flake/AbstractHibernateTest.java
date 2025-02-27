@@ -9,8 +9,11 @@ import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-class AbstractHibernateTest {
+abstract class AbstractHibernateTest {
+    private static final Logger log = LoggerFactory.getLogger(AbstractHibernateTest.class);
     protected static SessionFactory sessionFactory;
     protected Session session;
     protected Transaction transaction;
@@ -23,7 +26,7 @@ class AbstractHibernateTest {
                     .buildMetadata()
                     .buildSessionFactory();
         } catch (Exception e) {
-            System.err.println(e);
+            log.error("Exception whilst bootstrapping Hibernate: ", e);
         }
     }
 
@@ -31,14 +34,14 @@ class AbstractHibernateTest {
     public void openSessionAndTransaction() {
         session = sessionFactory.openSession();
         transaction = session.beginTransaction();
-        System.out.println("Session and transaction opened");
+        log.debug("Session and transaction opened");
     }
 
     @AfterEach
     public void rollbackTransactionAndCloseSession() {
         transaction.rollback();
         session.close();
-        System.out.println("Session and transaction closed");
+        log.debug("Session and transaction closed");
     }
 
 

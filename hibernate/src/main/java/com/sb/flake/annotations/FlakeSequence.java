@@ -1,6 +1,5 @@
 package com.sb.flake.annotations;
 
-import com.sb.flake.FlakePreset;
 import com.sb.flake.HibernateFlakeIdGenerator;
 import org.hibernate.annotations.IdGeneratorType;
 
@@ -15,6 +14,4 @@ import static java.lang.annotation.ElementType.METHOD;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({METHOD, FIELD})
 public @interface FlakeSequence {
-    GenerationRules rules() default @GenerationRules;
-    FlakePreset preset() default FlakePreset.SNOWFLAKE;
 }

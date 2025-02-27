@@ -1,5 +1,7 @@
 package com.sb.flake;
 
+import systems.helius.commons.SmartProperties;
+
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
@@ -18,5 +20,9 @@ public class RandomWorkerIdSupplier implements WorkerIdSupplier {
         } catch (NoSuchAlgorithmException e) {
             throw new UnsupportedOperationException("Your platform has no strong random number generation method!", e);
         }
+    }
+
+    public static WorkerIdSupplier getInstance(SmartProperties props) {
+        return new RandomWorkerIdSupplier();
     }
 }

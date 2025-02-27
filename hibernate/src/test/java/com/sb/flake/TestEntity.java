@@ -7,8 +7,7 @@ import jakarta.persistence.*;
 @Table(name = "test_entity_foobar")
 public class TestEntity {
     @Id
-    //@GeneratedValue(strategy = GenerationType.IDENTITY)
-    @FlakeSequence(preset = FlakePreset.SNOWFLAKE)
+    @FlakeSequence
     private Long id;
     private String name;
 
