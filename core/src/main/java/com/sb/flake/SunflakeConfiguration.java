@@ -9,6 +9,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -84,30 +85,34 @@ public class SunflakeConfiguration {
 
     private static void readEpoch(SmartProperties properties) {
         if (epoch == null) {
-            String epochProperty = properties.getProperty(EPOCH_PROPERTY);
-            if (epochProperty != null) {
-                epoch = LocalDate.parse(epochProperty, DateTimeFormatter.ISO_LOCAL_DATE)
-                        .atStartOfDay(ZoneOffset.UTC).toInstant();
+            String epochProp = properties.getProperty(EPOCH_PROPERTY);
+            if (epochProp != null) {
+                try {
+                    epoch = LocalDate.parse(epochProp)
+                            .atStartOfDay()
+                            .toInstant(ZoneOffset.UTC);
+                } catch (DateTimeParseException e) {
+                    throw new InitializationException("Epoch property is incorrectly formatted. Make sure it follows the yyyy-MM-dd format.");
+                }
             } else {
-                epoch = DEFAULT_EPOCH;
+                throw new InitializationException("Epoch property is not set. Set an epoch for the property " + EPOCH_PROPERTY + " in the Sunflake configuration file.");
             }
         }
     }
 
     private static void readRules(SmartProperties properties) {
         if (globalRules == null) {
-            FlakePreset preset = properties.getEnum(PRESET, FlakePreset.class);
-            if (preset != null) {
-                globalRules = preset.getRules();
-            } else {
-                var rules = new GenerationRulesBuilder();
-                properties.ifIntPresent(SEQUENCE_SIZE, rules::setSequenceSize)
-                        .ifIntPresent(WORKER_ID_SIZE, rules::setWorkerIdSize)
-                        .ifIntPresent(TIMESTAMP_SIZE, rules::setTimestampSize)
-                        .ifBooleanPresent(TIMESTAMP_ALLOW_USAGE_OF_SIGN_BIT, rules::setAllowUsageOfSignBit)
-                        .ifEnumPresent(TIMESTAMP_UNIT, TimeUnit.class, rules::setTimeUnit);
-                globalRules = rules.build();
-            }
+            Optional<FlakePreset> preset = properties.getEnum(PRESET, FlakePreset.class);
+            globalRules = preset.map(FlakePreset::getRules)
+                    .orElseGet(() -> {
+                        var rules = new GenerationRulesBuilder();
+                        properties.ifIntPresent(SEQUENCE_SIZE, rules::setSequenceSize)
+                                .ifIntPresent(WORKER_ID_SIZE, rules::setWorkerIdSize)
+                                .ifIntPresent(TIMESTAMP_SIZE, rules::setTimestampSize)
+                                .ifBooleanPresent(TIMESTAMP_ALLOW_USAGE_OF_SIGN_BIT, rules::setAllowUsageOfSignBit)
+                                .ifEnumPresent(TIMESTAMP_UNIT, TimeUnit.class, rules::setTimeUnit);
+                        return rules.build();
+                    });
         }
     }
 
