@@ -54,7 +54,7 @@ public class FlakeGeneratorBenchmark {
         private FlakeGenerator fromImplementation(String implementation) {
             switch (implementation) {
                 case "Synchronized":
-                    return new SynchronizedFlakeGenerator(Instant.now(), 1L, GenerationRules.VERY_HIGH_FREQUENCY);
+                    return new SynchronizedFlakeGenerator(1L, GenerationRules.veryHighFrequency(Instant.now()));
                 default: throw new IllegalArgumentException("Unknown implementation: " + implementation);
             }
         }
