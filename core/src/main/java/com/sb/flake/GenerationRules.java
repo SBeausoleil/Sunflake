@@ -7,6 +7,14 @@ public class GenerationRules implements Serializable {
     protected static final long serialVersionUID = 1L;
 
     public static final GenerationRules SNOWFLAKE = new GenerationRules(12, 10, 41, false, TimeUnit.MILLISECONDS, 1);
+    /**
+     * Generation rules suggested by Sony.
+     * <p>
+     *     - 8 bits for the sequence number
+     *     - 16 bits for the worker id
+     *     - 39 bits for the timestamp in ticks of 10 ms
+     * </p>
+     */
     public static final GenerationRules SONYFLAKE = new GenerationRules(8, 16, 39, false, TimeUnit.MILLISECONDS, 10);
     /**
      * Generation rules tolerating a single worker but with up to 2^32 new entries per millisecond.

@@ -75,6 +75,8 @@ public abstract class FlakeGenerator implements Serializable {
      */
     public FlakeData parse(long flake) {
         long msSinceEpoch = flake >> this.RULES.TIMESTAMP_SHIFT & this.RULES.TIMESTAMP_MASK;
+        msSinceEpoch *= this.RULES.TIME_UNITS_PER_TICK; // Decompress if there were multiple units per tick
+        msSinceEpoch = this.RULES.TIME_UNIT.convert(msSinceEpoch, TimeUnit.MILLISECONDS);
         Instant timestamp = this.EPOCH.plusMillis(msSinceEpoch);
         long workerId = flake >> this.RULES.getWorkerIdShift() & this.RULES.WORKER_ID_MASK;
         long sequenceNumber = flake & this.RULES.SEQUENCE_MASK;

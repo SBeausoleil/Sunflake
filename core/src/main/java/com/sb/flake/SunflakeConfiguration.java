@@ -92,6 +92,7 @@ public class SunflakeConfiguration {
                         properties.ifIntPresent(SEQUENCE_SIZE, rules::setSequenceSize)
                                 .ifIntPresent(WORKER_ID_SIZE, rules::setWorkerIdSize)
                                 .ifIntPresent(TIMESTAMP_SIZE, rules::setTimestampSize)
+                                .ifIntPresent(TIMESTAMP_UNITS_PER_TICK, rules::setTimeUnitsPerTick)
                                 .ifBooleanPresent(TIMESTAMP_ALLOW_USAGE_OF_SIGN_BIT, rules::setAllowUsageOfSignBit)
                                 .ifEnumPresent(TIMESTAMP_UNIT, TimeUnit.class, rules::setTimeUnit);
                         return rules.build();
