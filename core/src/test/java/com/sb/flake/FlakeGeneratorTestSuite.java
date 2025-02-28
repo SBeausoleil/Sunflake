@@ -23,7 +23,7 @@ public abstract class FlakeGeneratorTestSuite {
 
         long snowflake = generator.nextId();
 
-        FlakeData data = generator.parse(snowflake);
+        FlakeData data = rules.parse(snowflake);
         String flakeDefinition = " Snowflake was: " + snowflake + "(" + BinaryUtil.toFormattedBinary(snowflake, generator.getRules()) + "), parsed: " + data;
         assertFalse(data.getSinceEpoch().isNegative(), "Negative duration." + flakeDefinition);
         assertTrue(data.getSinceEpoch().toMillis() <= 2, "Weird duration on single call." + flakeDefinition); // Allow 2ms room for very slow computers
@@ -41,7 +41,7 @@ public abstract class FlakeGeneratorTestSuite {
             Thread.sleep(3);
             long snowflake = generator.nextId();
 
-            FlakeData data = generator.parse(snowflake);
+            FlakeData data = generator.getRules().parse(snowflake);
             String flakeDefinition = " Snowflake was: " + snowflake + "(" + BinaryUtil.toFormattedBinary(snowflake, generator.getRules()) + "), parsed: " + data;
             assertEquals(LOW_MACHINE_ID, data.getWorkerId(), "Invalid machineId." + flakeDefinition);
         }
@@ -52,8 +52,8 @@ public abstract class FlakeGeneratorTestSuite {
         FlakeGenerator generator = makeGenerator(1);
         long first = generator.nextId();
         long second = generator.nextId();
-        FlakeData firstData = generator.parse(first);
-        FlakeData secondData = generator.parse(second);
+        FlakeData firstData = generator.getRules().parse(first);
+        FlakeData secondData = generator.getRules().parse(second);
         assertNotEquals(firstData.getSequenceNumber(), secondData.getSequenceNumber(), "First was: " + firstData + ", second was: " + secondData);
     }
 
@@ -64,8 +64,8 @@ public abstract class FlakeGeneratorTestSuite {
         long first = generator.nextId();
         Thread.sleep(2);
         long second = generator.nextId();
-        FlakeData firstData = generator.parse(first);
-        FlakeData secondData = generator.parse(second);
+        FlakeData firstData = generator.getRules().parse(first);
+        FlakeData secondData = generator.getRules().parse(second);
         assertTrue(firstData.getTimestamp().isBefore(secondData.getTimestamp()), "First was: " + firstData + ", second was: " + secondData);
     }
 
@@ -166,8 +166,8 @@ public abstract class FlakeGeneratorTestSuite {
         long first = generator.nextId();
         Thread.sleep(4);
         long second = generator.nextId();
-        FlakeData firstData = generator.parse(first);
-        FlakeData secondData = generator.parse(second);
+        FlakeData firstData = generator.getRules().parse(first);
+        FlakeData secondData = generator.getRules().parse(second);
         assertEquals(firstData.getTimestamp(), secondData.getTimestamp(), "First was: " + firstData + ", second was: " + secondData);
     }
 
@@ -178,8 +178,8 @@ public abstract class FlakeGeneratorTestSuite {
         long first = generator.nextId();
         Thread.sleep(11);
         long second = generator.nextId();
-        FlakeData firstData = generator.parse(first);
-        FlakeData secondData = generator.parse(second);
+        FlakeData firstData = generator.getRules().parse(first);
+        FlakeData secondData = generator.getRules().parse(second);
         assertNotEquals(firstData.getTimestamp(), secondData.getTimestamp(), "First was: " + firstData + ", second was: " + secondData);
     }
 }

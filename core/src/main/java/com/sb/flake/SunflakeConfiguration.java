@@ -148,4 +148,14 @@ public class SunflakeConfiguration {
             throw new InitializationException("Exception while reading the properties file at: " + path, e);
         }
     }
+
+    /**
+     * Parse the given ID using the global rules.
+     *
+     * @param id the ID to parse
+     * @return the parsed data
+     */
+    public static FlakeData parse(long id) {
+        return getGlobalRules().parse(id);
+    }
 }
