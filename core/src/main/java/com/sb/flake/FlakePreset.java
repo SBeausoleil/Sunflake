@@ -1,17 +1,20 @@
 package com.sb.flake;
 
+import java.time.Instant;
+import java.util.function.Function;
+
 public enum FlakePreset {
-    SNOWFLAKE(GenerationRules.SNOWFLAKE),
-    SONYFLAKE(GenerationRules.SONYFLAKE),
-    VERY_HIGH_FREQUENCY(GenerationRules.VERY_HIGH_FREQUENCY);
+    SNOWFLAKE(GenerationRules::snowflake),
+    SONYFLAKE(GenerationRules::sonyflake),
+    VERY_HIGH_FREQUENCY(GenerationRules::veryHighFrequency);
 
-    final GenerationRules rules;
+    final Function<Instant, GenerationRules> rulesFunction;
 
-    FlakePreset(GenerationRules rules) {
-        this.rules = rules;
+    FlakePreset(Function<Instant, GenerationRules> rulesFunction) {
+        this.rulesFunction = rulesFunction;
     }
 
-    public GenerationRules getRules() {
-        return rules;
+    public GenerationRules getRules(Instant epoch) {
+        return rulesFunction.apply(epoch);
     }
 }

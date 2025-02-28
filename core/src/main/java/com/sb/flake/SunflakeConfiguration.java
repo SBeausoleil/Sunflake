@@ -56,7 +56,7 @@ public class SunflakeConfiguration {
         return globalRules;
     }
 
-    public static Instant getEpochProperty() {
+    public static Instant getEpoch() {
         if (epoch == null) {
             initialize();
         }
@@ -74,9 +74,9 @@ public class SunflakeConfiguration {
         if (globalRules == null || workerId == null || epoch == null) {
             try {
                 SmartProperties properties = readProperties();
+                readEpoch(properties);
                 readRules(properties);
                 readWorkerId(properties);
-                readEpoch(properties);
             } catch (IllegalArgumentException | DateTimeParseException e) {
                 throw new InitializationException(e);
             }
@@ -86,7 +86,7 @@ public class SunflakeConfiguration {
     private static void readRules(SmartProperties properties) {
         if (globalRules == null) {
             Optional<FlakePreset> preset = properties.getEnum(PRESET, FlakePreset.class);
-            globalRules = preset.map(FlakePreset::getRules)
+            globalRules = preset.map(flakePreset -> flakePreset.getRules(epoch))
                     .orElseGet(() -> {
                         var rules = new GenerationRulesBuilder();
                         properties.ifIntPresent(SEQUENCE_SIZE, rules::setSequenceSize)

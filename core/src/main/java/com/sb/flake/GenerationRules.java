@@ -1,29 +1,11 @@
 package com.sb.flake;
 
 import java.io.Serializable;
+import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 
 public class GenerationRules implements Serializable {
     protected static final long serialVersionUID = 1L;
-
-    public static final GenerationRules SNOWFLAKE = new GenerationRules(12, 10, 41, false, TimeUnit.MILLISECONDS, 1);
-    /**
-     * Generation rules suggested by Sony.
-     * <p>
-     *     - 8 bits for the sequence number
-     *     - 16 bits for the worker id
-     *     - 39 bits for the timestamp in ticks of 10 ms
-     * </p>
-     */
-    public static final GenerationRules SONYFLAKE = new GenerationRules(8, 16, 39, false, TimeUnit.MILLISECONDS, 10);
-    /**
-     * Generation rules tolerating a single worker but with up to 2^32 new entries per millisecond.
-     * Mostly used for tests.
-     */
-    public static final GenerationRules VERY_HIGH_FREQUENCY = new GenerationRulesBuilder()
-            .setSequenceSize(32)
-            .setWorkerIdSize(1)
-            .build();
 
     protected final int SEQUENCE_SIZE;
     protected final int WORKER_ID_SIZE;
@@ -47,15 +29,18 @@ public class GenerationRules implements Serializable {
     protected final long SHIFTED_WORKER_ID_MASK;
     protected final long SHIFTED_TIMESTAMP_MASK;
 
+    protected final Instant EPOCH;
+
     /**
      * Construct a GenerationRules instance.
      * Rules produced by this constructor do not allow the usage of the sign bit
      * and does not allow timestamp looping.
      * @param sequenceSize how many bits to attribute to the sequence number
      * @param workerIdSize how many bits to attribute to the worker id (machine ID in Snowflake)
+     * @param epoch the epoch to use
      */
-    public GenerationRules(int sequenceSize, int workerIdSize) {
-        this(sequenceSize, workerIdSize, false);
+    public GenerationRules(int sequenceSize, int workerIdSize, Instant epoch) {
+        this(sequenceSize, workerIdSize, epoch, false);
     }
 
     /**
@@ -64,15 +49,16 @@ public class GenerationRules implements Serializable {
      * @param workerIdSize how many bits to attribute to the worker id (machine ID in Snowflake)
      * @param allowUsageOfSignBit if the sign bit may be used.
      */
-    public GenerationRules(int sequenceSize, int workerIdSize, boolean allowUsageOfSignBit) {
+    public GenerationRules(int sequenceSize, int workerIdSize, Instant epoch, boolean allowUsageOfSignBit) {
         this(sequenceSize,
                 workerIdSize,
                 computeRemainingBits(sequenceSize, workerIdSize, allowUsageOfSignBit),
+                epoch,
                 allowUsageOfSignBit,
                 TimeUnit.MILLISECONDS, 1);
     }
     
-    public GenerationRules(int sequenceSize, int workerIdSize, int timestampSize, boolean allowUsageOfSignBit, TimeUnit timeUnit, int timeUnitsPerTick) {
+    public GenerationRules(int sequenceSize, int workerIdSize, int timestampSize, Instant epoch, boolean allowUsageOfSignBit, TimeUnit timeUnit, int timeUnitsPerTick) {
         this.SEQUENCE_SIZE = sequenceSize;
         this.WORKER_ID_SIZE = workerIdSize;
         this.TIMESTAMP_SIZE = timestampSize;
@@ -99,6 +85,66 @@ public class GenerationRules implements Serializable {
 
         this.SHIFTED_WORKER_ID_MASK = WORKER_ID_MASK << SEQUENCE_SIZE;
         this.SHIFTED_TIMESTAMP_MASK = TIMESTAMP_MASK << TIMESTAMP_SHIFT;
+
+        this.EPOCH = epoch;
+    }
+
+    /**
+     * Generation rules suggested by Twitter.
+     * <ul>
+     *     <li>41 bits for the timestamp in milliseconds since the epoch</li>
+     *     <li>10 bits for the worker id</li>
+     *     <li>12 bits for the sequence number</li>
+     * </ul>
+     * @param epoch
+     * @return
+     */
+    public static GenerationRules snowflake(Instant epoch) {
+        return new GenerationRulesBuilder()
+                .setTimestampSize(41)
+                .setWorkerIdSize(10)
+                .setSequenceSize(12)
+                .setEpoch(epoch)
+                .setTimeUnit(TimeUnit.MILLISECONDS)
+                .setTimeUnitsPerTick(1)
+                .setAllowUsageOfSignBit(false)
+                .build();
+    }
+
+    /**
+     * Generation rules suggested by Sony.
+     * <ul>
+     *     <li>8 bits for the sequence number</li>
+     *     <li>16 bits for the worker id</li>
+     *     <li>39 bits for the timestamp in ticks of 10 ms</li>
+     * </ul>
+     */
+    public static GenerationRules sonyflake(Instant epoch) {
+        return new GenerationRulesBuilder()
+                .setTimestampSize(39)
+                .setWorkerIdSize(16)
+                .setSequenceSize(8)
+                .setEpoch(epoch)
+                .setTimeUnit(TimeUnit.MILLISECONDS)
+                .setTimeUnitsPerTick(10)
+                .setAllowUsageOfSignBit(false)
+                .build();
+    }
+
+    /**
+     * Generation rules tolerating a single worker but with up to 2^32 new entries per millisecond.
+     * Mostly used for tests.
+     */
+    public static GenerationRules veryHighFrequency(Instant epoch) {
+        return new GenerationRulesBuilder()
+                .setTimestampSize(32)
+                .setWorkerIdSize(1)
+                .setSequenceSize(32)
+                .setEpoch(epoch)
+                .setTimeUnit(TimeUnit.MILLISECONDS)
+                .setTimeUnitsPerTick(1)
+                .setAllowUsageOfSignBit(true)
+                .build();
     }
 
     public int getSequenceSize() {
@@ -149,7 +195,15 @@ public class GenerationRules implements Serializable {
         return TIME_UNIT;
     }
 
-    public static int computeRemainingBits(int size1, int size2, boolean allowUsageOfSignBit) {
+    public Instant getEpoch() {
+        return EPOCH;
+    }
+
+    public int getTimeUnitsPerTick() {
+        return TIME_UNITS_PER_TICK;
+    }
+
+    protected static int computeRemainingBits(int size1, int size2, boolean allowUsageOfSignBit) {
         return Long.SIZE - size1 - size2 - (allowUsageOfSignBit ? 0 : 1);
     }
 }

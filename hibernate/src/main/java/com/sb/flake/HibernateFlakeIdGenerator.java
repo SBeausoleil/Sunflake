@@ -40,7 +40,6 @@ public class HibernateFlakeIdGenerator implements AnnotationBasedGenerator<Flake
 
     private static synchronized FlakeGenerator makeGenerator(Table table) {
         return generators.computeIfAbsent(table, c -> new SynchronizedFlakeGenerator(
-                SunflakeConfiguration.getEpochProperty(),
                 SunflakeConfiguration.getWorkerId(),
                 SunflakeConfiguration.getGlobalRules()
         ));

@@ -4,12 +4,12 @@ import java.time.Instant;
 
 public class SynchronizedSnowflakeGeneratorTest extends FlakeGeneratorTestSuite {
     @Override
-    FlakeGenerator makeGenerator(Instant epoch, long machineId) {
-        return new SynchronizedFlakeGenerator(epoch, machineId, GenerationRules.SNOWFLAKE);
+    FlakeGenerator makeGenerator(long machineId) {
+        return new SynchronizedFlakeGenerator(machineId, GenerationRules.snowflake(Instant.now()));
     }
 
     @Override
-    FlakeGenerator makeGenerator(Instant epoch, long machineId, GenerationRules rules) {
-        return new SynchronizedFlakeGenerator(epoch, machineId, rules);
+    FlakeGenerator makeGenerator(long machineId, GenerationRules rules) {
+        return new SynchronizedFlakeGenerator(machineId, rules);
     }
 }

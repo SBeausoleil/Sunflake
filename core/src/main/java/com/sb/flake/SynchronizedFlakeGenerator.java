@@ -16,8 +16,8 @@ public class SynchronizedFlakeGenerator extends FlakeGenerator {
     private long previousTimestamp;
     private long sequence;
 
-    public SynchronizedFlakeGenerator(Instant epoch, long workerId, GenerationRules rules) {
-        super(epoch, workerId, rules);
+    public SynchronizedFlakeGenerator(long workerId, GenerationRules rules) {
+        super(workerId, rules);
         this.previousTimestamp = this.INSTANCE_START_TIME;
         this.sequence = 0L;
     }

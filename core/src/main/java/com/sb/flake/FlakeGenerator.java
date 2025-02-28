@@ -6,7 +6,6 @@ import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 
 public abstract class FlakeGenerator implements Serializable {
-    protected final Instant EPOCH;
     protected final GenerationRules RULES;
     protected final long SHIFTED_WORKER_ID;
     /**
@@ -27,8 +26,7 @@ public abstract class FlakeGenerator implements Serializable {
      */
     protected final long CLOCK_EPOCH;
 
-    protected FlakeGenerator(Instant epoch, long workerId, GenerationRules rules) {
-        this.EPOCH = epoch;
+    protected FlakeGenerator(long workerId, GenerationRules rules) {
         this.RULES = rules;
 
         long maskedId = workerId & rules.getWorkerIdMask();
@@ -38,17 +36,13 @@ public abstract class FlakeGenerator implements Serializable {
         }
         this.SHIFTED_WORKER_ID = maskedId << rules.getWorkerIdShift();
 
-        long msSinceEpoch = System.currentTimeMillis() - epoch.toEpochMilli();
+        long msSinceEpoch = System.currentTimeMillis() - rules.getEpoch().toEpochMilli();
         this.INSTANCE_START_TIME = rules.getTimeUnit().convert(msSinceEpoch, TimeUnit.MILLISECONDS);
         this.CLOCK_EPOCH = System.nanoTime();
     }
 
     public GenerationRules getRules() {
         return RULES;
-    }
-
-    public Instant getEpoch() {
-        return EPOCH;
     }
 
     /**
@@ -77,7 +71,7 @@ public abstract class FlakeGenerator implements Serializable {
         long msSinceEpoch = flake >> this.RULES.TIMESTAMP_SHIFT & this.RULES.TIMESTAMP_MASK;
         msSinceEpoch *= this.RULES.TIME_UNITS_PER_TICK; // Decompress if there were multiple units per tick
         msSinceEpoch = this.RULES.TIME_UNIT.convert(msSinceEpoch, TimeUnit.MILLISECONDS);
-        Instant timestamp = this.EPOCH.plusMillis(msSinceEpoch);
+        Instant timestamp = this.RULES.EPOCH.plusMillis(msSinceEpoch);
         long workerId = flake >> this.RULES.getWorkerIdShift() & this.RULES.WORKER_ID_MASK;
         long sequenceNumber = flake & this.RULES.SEQUENCE_MASK;
         return new FlakeData(flake, timestamp, Duration.ofMillis(msSinceEpoch), workerId, sequenceNumber);

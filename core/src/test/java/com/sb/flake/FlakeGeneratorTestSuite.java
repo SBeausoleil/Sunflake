@@ -9,19 +9,22 @@ import java.util.concurrent.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class FlakeGeneratorTestSuite {
-    abstract FlakeGenerator makeGenerator(Instant epoch, long machineId);
-    abstract FlakeGenerator makeGenerator(Instant epoch, long machineId, GenerationRules rules);
-
+    /**
+     * Create a generator with the given machineId using the Snowflake rules with the current time as epoch.
+     */
+    abstract FlakeGenerator makeGenerator(long machineId);
+    abstract FlakeGenerator makeGenerator(long machineId, GenerationRules rules);
 
     @Test
     void nextId_setsBitsCorrectly() {
-        final int MACHINE_ID = ThreadLocalRandom.current().nextInt() & ((1 << GenerationRules.SNOWFLAKE.WORKER_ID_SIZE) - 1);
-        FlakeGenerator generator = makeGenerator(Instant.now(), MACHINE_ID);
+        final GenerationRules rules = GenerationRules.snowflake(Instant.now());
+        final int MACHINE_ID = ThreadLocalRandom.current().nextInt() & ((1 << rules.getWorkerSize()) - 1);
+        FlakeGenerator generator = makeGenerator(MACHINE_ID, rules);
 
         long snowflake = generator.nextId();
 
         FlakeData data = generator.parse(snowflake);
-        String flakeDefinition = " Snowflake was: " + snowflake + "(" + BinaryUtil.toFormattedBinary(snowflake, GenerationRules.SNOWFLAKE) + "), parsed: " + data;
+        String flakeDefinition = " Snowflake was: " + snowflake + "(" + BinaryUtil.toFormattedBinary(snowflake, generator.getRules()) + "), parsed: " + data;
         assertFalse(data.getSinceEpoch().isNegative(), "Negative duration." + flakeDefinition);
         assertTrue(data.getSinceEpoch().toMillis() <= 2, "Weird duration on single call." + flakeDefinition); // Allow 2ms room for very slow computers
         assertEquals(MACHINE_ID, data.getWorkerId(), "Invalid machineId." + flakeDefinition);
@@ -33,20 +36,20 @@ public abstract class FlakeGeneratorTestSuite {
     @Test
     void nextId_setsTimestampCorrectly() throws InterruptedException {
         final int LOW_MACHINE_ID = 2;
-        FlakeGenerator generator = makeGenerator(Instant.now(), LOW_MACHINE_ID);
+        FlakeGenerator generator = makeGenerator(LOW_MACHINE_ID);
         for (int i = 0; i < 10; i++) {
             Thread.sleep(3);
             long snowflake = generator.nextId();
 
             FlakeData data = generator.parse(snowflake);
-            String flakeDefinition = " Snowflake was: " + snowflake + "(" + BinaryUtil.toFormattedBinary(snowflake, GenerationRules.SNOWFLAKE) + "), parsed: " + data;
+            String flakeDefinition = " Snowflake was: " + snowflake + "(" + BinaryUtil.toFormattedBinary(snowflake, generator.getRules()) + "), parsed: " + data;
             assertEquals(LOW_MACHINE_ID, data.getWorkerId(), "Invalid machineId." + flakeDefinition);
         }
     }
 
     @Test
     void nextId_incrementsSequence() {
-        FlakeGenerator generator = makeGenerator(Instant.now(), 1);
+        FlakeGenerator generator = makeGenerator(1);
         long first = generator.nextId();
         long second = generator.nextId();
         FlakeData firstData = generator.parse(first);
@@ -57,7 +60,7 @@ public abstract class FlakeGeneratorTestSuite {
     @SuppressWarnings("squid:S2925") // We want to pass the time as part of the test.
     @Test
     void nextId_timestampIncreasesNaturally() throws InterruptedException {
-        FlakeGenerator generator = makeGenerator(Instant.now(), 1);
+        FlakeGenerator generator = makeGenerator(1);
         long first = generator.nextId();
         Thread.sleep(2);
         long second = generator.nextId();
@@ -68,7 +71,7 @@ public abstract class FlakeGeneratorTestSuite {
 
     @Test
     void nextId_whenSingleThreaded_providesUniqueIds() {
-        FlakeGenerator generator = makeGenerator(Instant.now(), 1);
+        FlakeGenerator generator = makeGenerator(1);
         final int N_IDS_TO_GENERATE = 15_000;
         TreeSet<Long> alreadyGenerated = new TreeSet<>();
         for (int i = 0; i < N_IDS_TO_GENERATE; i++) {
@@ -79,7 +82,7 @@ public abstract class FlakeGeneratorTestSuite {
 
     @Test
     void nextId_whenMultithreaded_providesUniqueIds() throws ExecutionException, InterruptedException {
-        FlakeGenerator generator = makeGenerator(Instant.now(), 1);
+        FlakeGenerator generator = makeGenerator(1);
 
         final int N_LOGICAL_CORES = Runtime.getRuntime().availableProcessors();
         final int N_IDS_TO_GENERATE = 5000;
@@ -105,7 +108,7 @@ public abstract class FlakeGeneratorTestSuite {
 
     @Test
     void nextId_whenMultithreaded_providesUniqueIds_debug() throws ExecutionException, InterruptedException {
-        FlakeGenerator generator = makeGenerator(Instant.now(), 1);
+        FlakeGenerator generator = makeGenerator(1);
 
         final int N_LOGICAL_CORES = Runtime.getRuntime().availableProcessors();
         final int N_IDS_TO_GENERATE = 500;
@@ -159,7 +162,7 @@ public abstract class FlakeGeneratorTestSuite {
     @SuppressWarnings("squid:S2925") // We want to pass the time as part of the test.
     @Test
     void GivenMultiUnitTicks_WhenDelayedCallsToNextIdWithinPeriod_ThenReturnWithSameTimestamp() throws InterruptedException {
-        FlakeGenerator generator = makeGenerator(Instant.now(), 1, GenerationRules.SONYFLAKE);
+        FlakeGenerator generator = makeGenerator(1, GenerationRules.sonyflake(Instant.now()));
         long first = generator.nextId();
         Thread.sleep(4);
         long second = generator.nextId();
@@ -171,18 +174,7 @@ public abstract class FlakeGeneratorTestSuite {
     @SuppressWarnings("squid:S2925") // We want to pass the time as part of the test.
     @Test
     void GivenMultiUnitTicks_WhenDelayedCallsToNextIdOutsidePeriod_ThenReturnWithNextTimestamp() throws InterruptedException {
-        FlakeGenerator generator = makeGenerator(Instant.now(), 1, GenerationRules.SONYFLAKE);
-        long first = generator.nextId();
-        Thread.sleep(11);
-        long second = generator.nextId();
-        FlakeData firstData = generator.parse(first);
-        FlakeData secondData = generator.parse(second);
-        assertNotEquals(firstData.getTimestamp(), secondData.getTimestamp(), "First was: " + firstData + ", second was: " + secondData);
-    }
-
-    @Test
-    void GivenMultiUnitTicks_WhenParse_ThenReturnCorrectTimestamp() throws InterruptedException {
-        FlakeGenerator generator = makeGenerator(Instant.now(), 1, GenerationRules.SONYFLAKE);
+        FlakeGenerator generator = makeGenerator(1, GenerationRules.sonyflake(Instant.now()));
         long first = generator.nextId();
         Thread.sleep(11);
         long second = generator.nextId();
