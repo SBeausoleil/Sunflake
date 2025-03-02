@@ -3,6 +3,9 @@ package com.sb.flake;
 import java.time.Instant;
 import java.util.function.Function;
 
+/**
+ * Preset rules for Sunflake configuration.
+ */
 public enum FlakePreset {
     SNOWFLAKE(GenerationRules::snowflake),
     SONYFLAKE(GenerationRules::sonyflake),

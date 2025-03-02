@@ -3,10 +3,14 @@ package com.sb.flake;
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Rules that a flake generator must follow.
+ */
 public class GenerationRules implements Serializable {
-    protected static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     protected final int SEQUENCE_SIZE;
     protected final int WORKER_ID_SIZE;
@@ -235,5 +239,33 @@ public class GenerationRules implements Serializable {
                 flake >> this.getWorkerIdShift() & this.WORKER_ID_MASK,
                 flake & this.SEQUENCE_MASK
         };
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        GenerationRules that = (GenerationRules) o;
+        return SEQUENCE_SIZE == that.SEQUENCE_SIZE
+                && WORKER_ID_SIZE == that.WORKER_ID_SIZE
+                && TIMESTAMP_SIZE == that.TIMESTAMP_SIZE
+                && TIME_UNITS_PER_TICK == that.TIME_UNITS_PER_TICK
+                && ALLOW_USAGE_OF_SIGN_BIT == that.ALLOW_USAGE_OF_SIGN_BIT
+                && SIGN_MASK == that.SIGN_MASK
+                && SEQUENCE_MASK == that.SEQUENCE_MASK
+                && WORKER_ID_MASK == that.WORKER_ID_MASK
+                && TIMESTAMP_MASK == that.TIMESTAMP_MASK
+                && TIMESTAMP_SHIFT == that.TIMESTAMP_SHIFT
+                && SHIFTED_WORKER_ID_MASK == that.SHIFTED_WORKER_ID_MASK
+                && SHIFTED_TIMESTAMP_MASK == that.SHIFTED_TIMESTAMP_MASK
+                && TIME_UNIT == that.TIME_UNIT
+                && Objects.equals(EPOCH, that.EPOCH);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(SEQUENCE_SIZE, WORKER_ID_SIZE, TIMESTAMP_SIZE,
+                TIME_UNIT, TIME_UNITS_PER_TICK, ALLOW_USAGE_OF_SIGN_BIT, SIGN_MASK,
+                SEQUENCE_MASK, WORKER_ID_MASK, TIMESTAMP_MASK, TIMESTAMP_SHIFT,
+                SHIFTED_WORKER_ID_MASK, SHIFTED_TIMESTAMP_MASK, EPOCH);
     }
 }

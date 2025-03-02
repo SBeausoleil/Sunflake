@@ -25,6 +25,14 @@ public class GenerationRulesBuilder {
     }
 
     /**
+     * Create a builder with the default values.
+     * @param epoch
+     */
+    public GenerationRulesBuilder(Instant epoch) {
+        this.epoch = epoch;
+    }
+
+    /**
      * Create a builder from the given rules.
      * @param rules
      */

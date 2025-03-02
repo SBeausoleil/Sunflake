@@ -15,12 +15,9 @@ import java.util.concurrent.TimeUnit;
  */
 public class SunflakeConfiguration {
 
-    public static final Instant DEFAULT_EPOCH = LocalDate.of(2025, 1, 1).atStartOfDay(ZoneOffset.UTC).toInstant();
-
     public static final String FILE_NAME = "sunflake.properties";
     private static final String PREFIX = "sunflake.";
     public static final String PRESET = PREFIX + "preset";
-    public static final String PER_TABLE_GENERATOR = PREFIX + "perTableGenerator";
     public static final String EPOCH_PROPERTY = PREFIX + "epoch";
 
     public static final String SEQUENCE_SIZE = PREFIX + "sequenceSize";
@@ -30,12 +27,16 @@ public class SunflakeConfiguration {
 
     public static final String TIMESTAMP = PREFIX + "timestamp.";
     public static final String TIMESTAMP_SIZE = TIMESTAMP + "size";
+    /**
+     * The time unit of the timestamp.
+     * The accepted values are those of the {@link TimeUnit} enum.
+     */
     public static final String TIMESTAMP_UNIT = TIMESTAMP + "unit";
     public static final String TIMESTAMP_UNITS_PER_TICK = TIMESTAMP_UNIT + "unitsPerTick";
     public static final String TIMESTAMP_ALLOW_USAGE_OF_SIGN_BIT = TIMESTAMP_UNIT + "allowUsageOfSignBit";
 
-    private static GenerationRules globalRules = null;
-    private static Long workerId = null;
+    private static GenerationRules globalRules;
+    private static Long workerId;
     private static Instant epoch;
 
     private SunflakeConfiguration() {
@@ -70,16 +71,38 @@ public class SunflakeConfiguration {
         return workerId;
     }
 
+    /**
+     * Initialize the configuration using the given properties.
+     * @param props
+     */
+    // Default encapsulation is to make it reachable for tests
+    static void initialize(SmartProperties props) {
+        try {
+            readEpoch(props);
+            readRules(props);
+            readWorkerId(props);
+        } catch (IllegalArgumentException | DateTimeParseException e) {
+            throw new InitializationException(e);
+        }
+    }
+
+    /**
+     * Reset the configuration.
+     * <p>
+     * This will reset the global rules, worker ID and epoch.
+     * </p>
+     */
+    // Default encapsulation is to make it reachable for tests
+    static void reset() {
+        globalRules = null;
+        workerId = null;
+        epoch = null;
+    }
+
     private static synchronized void initialize() {
         if (globalRules == null || workerId == null || epoch == null) {
-            try {
-                SmartProperties properties = readProperties();
-                readEpoch(properties);
-                readRules(properties);
-                readWorkerId(properties);
-            } catch (IllegalArgumentException | DateTimeParseException e) {
-                throw new InitializationException(e);
-            }
+            SmartProperties properties = readProperties();
+            initialize(properties);
         }
     }
 
@@ -88,7 +111,7 @@ public class SunflakeConfiguration {
             Optional<FlakePreset> preset = properties.getEnum(PRESET, FlakePreset.class);
             globalRules = preset.map(flakePreset -> flakePreset.getRules(epoch))
                     .orElseGet(() -> {
-                        var rules = new GenerationRulesBuilder();
+                        var rules = new GenerationRulesBuilder(epoch);
                         properties.ifIntPresent(SEQUENCE_SIZE, rules::setSequenceSize)
                                 .ifIntPresent(WORKER_ID_SIZE, rules::setWorkerIdSize)
                                 .ifIntPresent(TIMESTAMP_SIZE, rules::setTimestampSize)
