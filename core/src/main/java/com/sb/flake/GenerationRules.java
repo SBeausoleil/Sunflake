@@ -36,6 +36,9 @@ public class GenerationRules implements Serializable {
 
     protected final Instant EPOCH;
 
+
+    protected final int C_T = 1; // DELME
+
     /**
      * Construct a GenerationRules instance.
      * Rules produced by this constructor do not allow the usage of the sign bit
