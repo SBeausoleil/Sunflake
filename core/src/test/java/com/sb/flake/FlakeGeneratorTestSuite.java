@@ -1,7 +1,10 @@
 package com.sb.flake;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
@@ -13,6 +16,7 @@ public abstract class FlakeGeneratorTestSuite {
      * Create a generator with the given machineId using the Snowflake rules with the current time as epoch.
      */
     abstract FlakeGenerator makeGenerator(long machineId);
+
     abstract FlakeGenerator makeGenerator(long machineId, GenerationRules rules);
 
     @Test
@@ -181,5 +185,28 @@ public abstract class FlakeGeneratorTestSuite {
         FlakeData firstData = generator.getRules().parse(first);
         FlakeData secondData = generator.getRules().parse(second);
         assertNotEquals(firstData.getTimestamp(), secondData.getTimestamp(), "First was: " + firstData + ", second was: " + secondData);
+    }
+
+    /**
+     * Checks that for different units of time, the generator will return the same timestamp until the next ticks for that specific timestamp.
+     * This test verifies that the assumption is good for three ticks.
+     */
+    @ParameterizedTest
+    @EnumSource(value = TimeUnit.class, names = {"MICROSECONDS", "MILLISECONDS", "SECONDS"}, mode = EnumSource.Mode.INCLUDE)
+    void GivenDifferentTimeUnits_WhenBusyCallingNextId_ThenReturnWithSameTimestampUntilCorrectTimestampIncrease(TimeUnit timeUnit) {
+        GenerationRules rules = new GenerationRulesBuilder(
+                GenerationRules.veryHighFrequency(Instant.now()))
+                .setTimeUnit(timeUnit)
+                .build();
+        FlakeGenerator generator = makeGenerator(1L, rules);
+
+        final long N_UNITS = 3;
+        FlakeData data = rules.parse(generator.nextId());
+        Duration calibration = data.getSinceEpoch();
+        do {
+            long snowflake = generator.nextId();
+            data = generator.getRules().parse(snowflake);
+        } while (timeUnit.convert(data.getSinceEpoch()) < N_UNITS);
+        assertEquals(timeUnit.convert(data.getSinceEpoch()) + N_UNITS, timeUnit.convert(data.getSinceEpoch()));
     }
 }

@@ -36,9 +36,6 @@ public class GenerationRules implements Serializable {
 
     protected final Instant EPOCH;
 
-
-    protected final int C_T = 1; // DELME
-
     /**
      * Construct a GenerationRules instance.
      * Rules produced by this constructor do not allow the usage of the sign bit
@@ -65,7 +62,17 @@ public class GenerationRules implements Serializable {
                 allowUsageOfSignBit,
                 TimeUnit.MILLISECONDS, 1);
     }
-    
+
+    /**
+     * Construct a GenerationRules instance.
+     * @param sequenceSize how many bits to attribute to the sequence number
+     * @param workerIdSize how many bits to attribute to the worker id (machine ID in Snowflake)
+     * @param timestampSize how many bits to attribute to the timestamp
+     * @param epoch from when are the ticks counting from
+     * @param allowUsageOfSignBit if the sign bit may be used for the timestamp
+     * @param timeUnit unit of time used to count timestamp increases
+     * @param timeUnitsPerTick how many time units are in a tick
+     */
     public GenerationRules(int sequenceSize, int workerIdSize, int timestampSize, Instant epoch, boolean allowUsageOfSignBit, TimeUnit timeUnit, int timeUnitsPerTick) {
         this.SEQUENCE_SIZE = sequenceSize;
         this.WORKER_ID_SIZE = workerIdSize;
@@ -145,7 +152,7 @@ public class GenerationRules implements Serializable {
      */
     public static GenerationRules veryHighFrequency(Instant epoch) {
         return new GenerationRulesBuilder()
-                .setTimestampSize(32)
+                .setTimestampSize(31)
                 .setWorkerIdSize(1)
                 .setSequenceSize(32)
                 .setEpoch(epoch)
