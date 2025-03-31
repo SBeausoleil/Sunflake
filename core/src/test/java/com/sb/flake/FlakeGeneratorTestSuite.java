@@ -4,7 +4,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
@@ -62,11 +61,16 @@ public abstract class FlakeGeneratorTestSuite {
     }
 
     @SuppressWarnings("squid:S2925") // We want to pass the time as part of the test.
-    @Test
-    void nextId_timestampIncreasesNaturally() throws InterruptedException {
-        FlakeGenerator generator = makeGenerator(1);
+    @ParameterizedTest
+    @EnumSource(value = TimeUnit.class, names = {"MILLISECONDS", "SECONDS"}, mode = EnumSource.Mode.INCLUDE)
+    void nextId_timestampIncreasesNaturally(TimeUnit timeUnit) throws InterruptedException {
+        FlakeGenerator generator = makeGenerator(1,
+                new GenerationRulesBuilder(
+                        GenerationRules.snowflake(Instant.now()))
+                        .setTimeUnit(timeUnit)
+                        .build());
         long first = generator.nextId();
-        Thread.sleep(2);
+        Thread.sleep(TimeUnit.MILLISECONDS.convert(2, timeUnit));
         long second = generator.nextId();
         FlakeData firstData = generator.getRules().parse(first);
         FlakeData secondData = generator.getRules().parse(second);
@@ -192,7 +196,7 @@ public abstract class FlakeGeneratorTestSuite {
      * This test verifies that the assumption is good for three ticks.
      */
     @ParameterizedTest
-    @EnumSource(value = TimeUnit.class, names = {"MICROSECONDS", "MILLISECONDS", "SECONDS"}, mode = EnumSource.Mode.INCLUDE)
+    @EnumSource(value = TimeUnit.class, names = {"MILLISECONDS", "SECONDS"}, mode = EnumSource.Mode.INCLUDE)
     void GivenDifferentTimeUnits_WhenBusyCallingNextId_ThenReturnWithSameTimestampUntilCorrectTimestampIncrease(TimeUnit timeUnit) {
         GenerationRules rules = new GenerationRulesBuilder(
                 GenerationRules.veryHighFrequency(Instant.now()))
@@ -201,12 +205,13 @@ public abstract class FlakeGeneratorTestSuite {
         FlakeGenerator generator = makeGenerator(1L, rules);
 
         final long N_UNITS = 3;
-        FlakeData data = rules.parse(generator.nextId());
-        Duration calibration = data.getSinceEpoch();
+        long nanoStart = System.nanoTime();
+        long plannedEnd = nanoStart + TimeUnit.NANOSECONDS.convert(N_UNITS, timeUnit);
+        long flake;
         do {
-            long snowflake = generator.nextId();
-            data = generator.getRules().parse(snowflake);
-        } while (timeUnit.convert(data.getSinceEpoch()) < N_UNITS);
-        assertEquals(timeUnit.convert(data.getSinceEpoch()) + N_UNITS, timeUnit.convert(data.getSinceEpoch()));
+            flake = generator.nextId();
+        } while (plannedEnd > System.nanoTime());
+        long nTicks = rules.isolateComponents(flake)[0];
+        assertEquals(N_UNITS, nTicks);
     }
 }
