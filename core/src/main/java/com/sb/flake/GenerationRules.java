@@ -234,11 +234,11 @@ public class GenerationRules implements Serializable {
         // Convert a tick to microseconds since epoch
         long sinceEpoch = components[0];
         sinceEpoch *= this.TIME_UNITS_PER_TICK; // Decompress if there were multiple units per tick
-        sinceEpoch = TimeUnit.MICROSECONDS.convert(sinceEpoch, TimeUnit.MICROSECONDS);
+        sinceEpoch = TimeUnit.MICROSECONDS.convert(sinceEpoch, TIME_UNIT);
         Instant timestamp = this.EPOCH.plus(sinceEpoch, ChronoUnit.MICROS);
         long workerId = components[1];
         long sequenceNumber = components[2];
-        return new FlakeData(flake, timestamp, Duration.ofMillis(sinceEpoch), workerId, sequenceNumber);
+        return new FlakeData(flake, timestamp, Duration.between(EPOCH, timestamp), workerId, sequenceNumber);
     }
 
     /**

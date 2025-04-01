@@ -236,7 +236,8 @@ public abstract class FlakeGeneratorTestSuite {
 
         // Time module comparison
         Duration expectedDuration = Duration.between(EPOCH, EPOCH.plus(secondsSince, ChronoUnit.SECONDS));
-        Duration actualDuration = rules.parse(flake).getSinceEpoch();
+        FlakeData flakeData = rules.parse(flake);
+        Duration actualDuration = flakeData.getSinceEpoch();
         assertEquals(expectedDuration, actualDuration);
     }
 }
