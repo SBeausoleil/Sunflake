@@ -37,7 +37,7 @@ public abstract class FlakeGenerator implements Serializable {
         this.SHIFTED_WORKER_ID = maskedId << rules.getWorkerIdShift();
 
         long msSinceEpoch = System.currentTimeMillis() - rules.getEpoch().toEpochMilli();
-        this.INSTANCE_START_TIME = rules.getTimeUnit().convert(msSinceEpoch, TimeUnit.MILLISECONDS);
+        this.INSTANCE_START_TIME = rules.getTimeUnit().convert(msSinceEpoch, TimeUnit.MILLISECONDS) / rules.getTimeUnitsPerTick();
         this.CLOCK_EPOCH = System.nanoTime();
     }
 

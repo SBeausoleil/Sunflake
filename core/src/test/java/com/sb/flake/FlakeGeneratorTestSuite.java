@@ -4,7 +4,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
-import java.time.Instant;
+import java.time.*;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -213,5 +214,29 @@ public abstract class FlakeGeneratorTestSuite {
         } while (plannedEnd > System.nanoTime());
         long nTicks = rules.isolateComponents(flake)[0];
         assertEquals(N_UNITS, nTicks);
+    }
+
+    @Test
+    void GivenOldEpoch_WhenNextId_ThenTimestampIsCorrectInRelationToEpoch() {
+        final Instant EPOCH = OffsetDateTime.of(
+                LocalDateTime.of(2020, 1, 22, 16, 15, 30),
+                ZoneOffset.UTC
+        ).toInstant();
+        GenerationRules rules = new GenerationRulesBuilder(GenerationRules.snowflake(EPOCH))
+                .setTimeUnit(TimeUnit.SECONDS) // Use seconds to give some leeway to latency inherent to the test.
+                .build();
+        FlakeGenerator generator = makeGenerator(1,
+                rules);
+
+        // Raw comparison
+        long flake = generator.nextId();
+        long secondsSince = (System.currentTimeMillis() - EPOCH.toEpochMilli()) / 1000;
+        long actual = rules.isolateComponents(flake)[0];
+        assertEquals(secondsSince, actual);
+
+        // Time module comparison
+        Duration expectedDuration = Duration.between(EPOCH, EPOCH.plus(secondsSince, ChronoUnit.SECONDS));
+        Duration actualDuration = rules.parse(flake).getSinceEpoch();
+        assertEquals(expectedDuration, actualDuration);
     }
 }
