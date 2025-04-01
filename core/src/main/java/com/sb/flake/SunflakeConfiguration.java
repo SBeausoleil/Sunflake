@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 public class SunflakeConfiguration {
 
     public static final String FILE_NAME = "sunflake.properties";
-    private static final String PREFIX = "sunflake.";
+    static final String PREFIX = "sunflake.";
     public static final String PRESET = PREFIX + "preset";
     public static final String EPOCH_PROPERTY = PREFIX + "epoch";
 
@@ -132,6 +132,9 @@ public class SunflakeConfiguration {
                     WorkerIdSupplier supplier = (WorkerIdSupplier) clazz.getMethod("getInstance", SmartProperties.class)
                             .invoke(null, readProperties());
                     workerId = supplier.getWorkerId(globalRules.getWorkerSize());
+                } catch (NoSuchMethodException e) {
+                    throw new InitializationException("Defined class " + workerIdSourceClass + " does not respect the contract of " +
+                            "defining a \"public static WorkerIdSupplier getInstance(SmartProperties)\".");
                 } catch (Exception e) {
                     throw new InitializationException("Exception while reading the worker ID from the class: " + workerIdSourceClass, e);
                 }

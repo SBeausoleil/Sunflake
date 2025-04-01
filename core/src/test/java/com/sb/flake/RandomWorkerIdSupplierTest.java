@@ -11,14 +11,14 @@ class RandomWorkerIdSupplierTest {
     void getWorkerId_max10() {
         var supplier = new RandomWorkerIdSupplier();
         long workerId = supplier.getWorkerId(10);
-        assertTrue(workerId >= 0 && workerId < 1024);
+        assertTrue(workerId >= 0 && workerId < 1024, workerId + " is not between 0 and 1024.");
     }
 
     @Test
     void getWorkerId_max4() {
         var supplier = new RandomWorkerIdSupplier();
         long workerId = supplier.getWorkerId(4);
-        assertTrue(workerId >= 0 && workerId < 16);
+        assertTrue(workerId >= 0 && workerId < 16, " is not between 0 and 16");
     }
 
     @Test

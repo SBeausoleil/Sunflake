@@ -12,7 +12,7 @@ public interface WorkerIdSupplier {
      * <p>
      *     A worker ID may be reused, as long as there is no other active processes on this or other servers currently using it.
      * </p>
-     * @param maxLength the maximum number of bits required to represent the worker ID
+     * @param maxLength the maximum number of bits required to represent the worker ID. Will be a number between 1 and 60.
      * @return the unique ID of this process across all servers that connect to the same database
      */
     long getWorkerId(int maxLength);
