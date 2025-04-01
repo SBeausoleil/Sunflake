@@ -11,11 +11,11 @@ public class PhysicalAddressWorkerIdSupplier implements WorkerIdSupplier {
     private final long PHYSICAL_ADDRESS;
 
     public PhysicalAddressWorkerIdSupplier() throws SocketException, UnknownHostException {
-        // Code from Baeldung: https://www.baeldung.com/java-mac-address
         PHYSICAL_ADDRESS = getPhysicalAddress();
     }
 
     static long getPhysicalAddress() throws UnknownHostException, SocketException {
+        // Code from Baeldung: https://www.baeldung.com/java-mac-address
         InetAddress localHost = InetAddress.getLocalHost();
         NetworkInterface ni = NetworkInterface.getByInetAddress(localHost);
         byte[] hardwareAddress = ni.getHardwareAddress();
