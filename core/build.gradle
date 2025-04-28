@@ -1,0 +1,25 @@
+plugins {
+    id("java-library")
+    id "me.champeau.jmh" version "0.7.2"
+}
+
+group = "systems.helius"
+version = "1.0-SNAPSHOT"
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation(project(":helius-commons"))
+
+    jmhImplementation group: 'org.openjdk.jmh', name: 'jmh-core', version: '1.37'
+    jmhAnnotationProcessor  group: 'org.openjdk.jmh', name: 'jmh-generator-annprocess', version: '1.37'
+
+    testImplementation(platform("org.junit:junit-bom:5.10.0"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+}
+
+tasks.test {
+    useJUnitPlatform()
+}
