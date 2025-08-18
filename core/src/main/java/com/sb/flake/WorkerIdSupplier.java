@@ -2,9 +2,11 @@ package com.sb.flake;
 
 /**
  * A supplier for the unique ID of this process across all servers that connect to the same database.
+ * <p>
  * The class must have a static method with the following signature:
- * {@code public static WorkerIdSupplier getInstance(SmartProperties properties)}
+ * {@code public static WorkerIdSupplier getInstance(SmartProperties properties)}.
  * The method will be called during configuration to get the worker id of this process.
+ * </p>
  */
 public interface WorkerIdSupplier {
     /**

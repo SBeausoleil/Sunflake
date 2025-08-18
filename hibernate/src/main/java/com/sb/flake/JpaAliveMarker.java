@@ -1,10 +1,13 @@
 package com.sb.flake;
 
+import jakarta.annotation.Nullable;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Represents a marker in the DB that indicates that this worker id is in use.
@@ -12,66 +15,73 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "sunflake_alive_marker")
 public class JpaAliveMarker implements AliveMarker {
-    /**
-     * The worker id that is in use.
-     */
     @Id
-    protected long workerId;
+    private long workerId;
+    @Nullable
+    private LocalDateTime reservedUntil;
+    @Nullable
+    private LocalDateTime lastRenewedTime;
+
     /**
-     * The moment when this marker was created/renewed.
+     * Default constructor for JPA.
+     * This constructor is required by JPA to create instances of this entity.
      */
-    protected LocalDateTime moment;
-    /**
-     * The number of seconds after which this marker is considered expired.
-     */
-    protected int nSeconds;
-
-    protected LocalDateTime lastRenewedTime;
-
-    protected transient KeepAliveService keepAliveService;
-
+    @SuppressWarnings("unused")
     protected JpaAliveMarker() {
+        // Default constructor for JPA
     }
 
-    public JpaAliveMarker(long workerId, int nSeconds, LocalDateTime moment) {
+    public JpaAliveMarker(AliveMarker prototype) {
+        this.workerId = prototype.getWorkerId();
+        this.reservedUntil = prototype.getReservedUntil().orElse(null);
+        this.lastRenewedTime = prototype.getLastRenewedTime().orElse(null);
+    }
+
+    public JpaAliveMarker(long workerId) {
+        this(workerId, null, null);
+    }
+
+    public JpaAliveMarker(long workerId, @Nullable LocalDateTime reservedUntil, @Nullable LocalDateTime lastRenewedTime) {
         this.workerId = workerId;
-        this.nSeconds = nSeconds;
-        this.moment = moment;
+        this.reservedUntil = reservedUntil;
+        this.lastRenewedTime = lastRenewedTime;
     }
 
+    @Override
     public long getWorkerId() {
         return workerId;
     }
 
-    public LocalDateTime getMoment() {
-        return moment;
-    }
-
-    public void setMoment(LocalDateTime moment) {
-        this.moment = moment;
-    }
-
-    public int getnSeconds() {
-        return nSeconds;
+    @Override
+    public Optional<LocalDateTime> getReservedUntil() {
+        return Optional.ofNullable(reservedUntil);
     }
 
     @Override
-    public boolean renew() {
-        try {
-            this.lastRenewedTime = keepAliveService.renewMarker(this);
-            return true;
-        } catch (RenewalException e) {
-            return false;
-        }
+    public Optional<LocalDateTime> getLastRenewedTime() {
+        return Optional.ofNullable(lastRenewedTime);
+    }
+
+    public void setWorkerId(long workerId) {
+        this.workerId = workerId;
+    }
+
+    public void setReservedUntil(@Nullable LocalDateTime reservedUntil) {
+        this.reservedUntil = reservedUntil;
+    }
+
+    public void setLastRenewedTime(@Nullable LocalDateTime lastRenewedTime) {
+        this.lastRenewedTime = lastRenewedTime;
     }
 
     @Override
-    public LocalDateTime getLastRenewedTime() {
-        return null;
+    public boolean equals(Object o) {
+        if (!(o instanceof JpaAliveMarker that)) return false;
+        return workerId == that.workerId && Objects.equals(reservedUntil, that.reservedUntil) && Objects.equals(lastRenewedTime, that.lastRenewedTime);
     }
 
     @Override
-    public long getMaxLifeLength() {
-        return 0;
+    public int hashCode() {
+        return Objects.hash(workerId, reservedUntil, lastRenewedTime);
     }
 }

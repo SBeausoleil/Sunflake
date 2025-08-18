@@ -35,9 +35,34 @@ public class SunflakeConfiguration {
     public static final String TIMESTAMP_UNITS_PER_TICK = TIMESTAMP_UNIT + "unitsPerTick";
     public static final String TIMESTAMP_ALLOW_USAGE_OF_SIGN_BIT = TIMESTAMP_UNIT + "allowUsageOfSignBit";
 
+    /**
+     * How long to reserve the worker ID for this process, in seconds.<br/>
+     * Recommended to be at least 60 seconds.<br/>
+     * Default is 150 seconds (2 minutes and 30 seconds).<br/>
+     * <p>
+     *     Must be greater than the renewal interval.
+     * </p>
+     */
+    public static final String RESERVE_DURATION_SECONDS_PROPERTY = PREFIX + "keepAlive";
+    public static final int DEFAULT_RESERVE_DURATION_SECONDS = 150;
+
+    /**
+     * How often to renew the worker ID reservation, in seconds.<br/>
+     * Recommended to be at least 30 seconds.<br/>
+     * Default is 120 seconds (2 minutes).<br/>
+     * <p>
+     *     Must be less than the keep alive interval.
+     * </p>
+     */
+    public static final String RENEWAL_INTERVAL_SECONDS_PROPERTY = PREFIX + "renewalInterval";
+    public static final int DEFAULT_RENEWAL_INTERVAL_SECONDS = 120;
+
     private static GenerationRules globalRules;
     private static Long workerId;
     private static Instant epoch;
+
+    private static Integer reserveDuration;
+    private static Integer renewalInterval;
 
     private SunflakeConfiguration() {
     }
@@ -71,6 +96,20 @@ public class SunflakeConfiguration {
         return workerId;
     }
 
+    public static int getReserveDuration() {
+        if (reserveDuration == null) {
+            initialize();
+        }
+        return reserveDuration;
+    }
+
+    public static int getRenewalInterval() {
+        if (renewalInterval == null) {
+            initialize();
+        }
+        return renewalInterval;
+    }
+
     /**
      * Initialize the configuration using the given properties.
      * @param props
@@ -97,10 +136,13 @@ public class SunflakeConfiguration {
         globalRules = null;
         workerId = null;
         epoch = null;
+        reserveDuration = null;
+        renewalInterval = null;
     }
 
     private static synchronized void initialize() {
-        if (globalRules == null || workerId == null || epoch == null) {
+        if (globalRules == null || workerId == null || epoch == null
+                || reserveDuration == null || renewalInterval == null) {
             SmartProperties properties = readProperties();
             initialize(properties);
         }
@@ -120,6 +162,12 @@ public class SunflakeConfiguration {
                                 .ifEnumPresent(TIMESTAMP_UNIT, TimeUnit.class, rules::setTimeUnit);
                         return rules.build();
                     });
+        }
+        if (reserveDuration == null) {
+            reserveDuration = properties.getInt(RESERVE_DURATION_SECONDS_PROPERTY, DEFAULT_RESERVE_DURATION_SECONDS);
+        }
+        if (renewalInterval == null) {
+            renewalInterval = properties.getInt(RENEWAL_INTERVAL_SECONDS_PROPERTY, DEFAULT_RENEWAL_INTERVAL_SECONDS);
         }
     }
 
