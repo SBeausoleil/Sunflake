@@ -2,8 +2,6 @@ package com.sb.flake;
 
 import jakarta.annotation.Nullable;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.Persistence;
 import org.hibernate.service.spi.Startable;
 import systems.helius.commons.annotations.Internal;
 
@@ -13,11 +11,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class HibernateDbKeepAliveService implements KeepAliveService, Startable {
-
-    private final EntityManagerFactory emf;
-
     public HibernateDbKeepAliveService() {
-        this.emf = Persistence.createEntityManagerFactory("sunflake.hibernate");
     }
 
     @Override
@@ -37,7 +31,7 @@ public class HibernateDbKeepAliveService implements KeepAliveService, Startable 
                                             int maxTries, int maxLength,
                                             @Nullable List<Long> pastTries)
             throws WorkerIdReservationException {
-        try (EntityManager em = emf.createEntityManager()) {
+        try (EntityManager em = SunflakeJpaContext.getInstance().getEntityManager()) {
             int reserve = SunflakeConfiguration.getReserveDuration();
             LocalDateTime renewalTime = LocalDateTime.now();
             LocalDateTime reservedUntil = renewalTime.plusSeconds(reserve);

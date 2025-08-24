@@ -13,7 +13,7 @@ import java.util.Optional;
  * Represents a marker in the DB that indicates that this worker id is in use.
  */
 @Entity
-@Table(name = "sunflake_alive_marker")
+@Table(name = SunflakeConstants.KEEP_ALIVE_TABLE_NAME)
 public class JpaAliveMarker implements AliveMarker {
     @Id
     private long workerId;
