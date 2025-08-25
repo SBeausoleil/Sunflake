@@ -1,6 +1,7 @@
 package com.sb.flake;
 
 import com.sb.flake.annotations.FlakeSequence;
+import jakarta.persistence.PersistenceContext;
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.generator.AnnotationBasedGenerator;
 import org.hibernate.generator.BeforeExecutionGenerator;
@@ -24,6 +25,7 @@ public class HibernateFlakeIdGenerator implements AnnotationBasedGenerator<Flake
     @Override
     public void initialize(FlakeSequence annotation, Member member, GeneratorCreationContext context) {
         this.generator = makeGenerator(context.getPersistentClass().getRootTable());
+
     }
 
     @Override
@@ -33,6 +35,11 @@ public class HibernateFlakeIdGenerator implements AnnotationBasedGenerator<Flake
 
     @Override
     public Object generate(SharedSessionContractImplementor session, Object owner, Object currentValue, EventType eventType) {
+        SunflakeJpaContext sunflakeContext = SunflakeJpaContext.getInstance();
+        if (!sunflakeContext.isInitialized()) {
+            log.info("Initializing Sunflake context for Hibernate.");
+            sunflakeContext.initialize();
+        }
         log.debug("Generate: FlakeIdGenerator: {}, generating ID for: {} ({})",
                 System.identityHashCode(this), owner, System.identityHashCode(owner));
         return generator.nextId();

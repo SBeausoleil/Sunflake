@@ -1,10 +1,14 @@
 package com.sb.flake;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.hibernate.service.spi.Startable;
-import org.hibernate.tool.hbm2ddl.SchemaExport;
 
 public class TableInitializer implements Startable {
+
+    @PersistenceContext
+    private EntityManager em;
+
     @Override
     public void start() {
         EntityManager em = SunflakeJpaContext.getInstance().getEntityManager();

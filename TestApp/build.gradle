@@ -25,6 +25,10 @@ repositories {
 }
 
 dependencies {
+    // For Sunflake
+    implementation(project(":hibernate"))
+
+    // Application specific
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     compileOnly 'org.projectlombok:lombok'
