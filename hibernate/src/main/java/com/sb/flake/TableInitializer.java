@@ -11,16 +11,23 @@ class TableInitializer {
      */
     @Transactional
     static void createKeepAliveTable(EntityManager em) {
-        Session session = em.unwrap(Session.class);
-        session.doWork(connection -> {
-            connection.createStatement().executeUpdate(
-                    "CREATE TABLE IF NOT EXISTS " + SunflakeConstants.KEEP_ALIVE_TABLE_NAME +
-                            " (workerId BIGINT PRIMARY KEY, reservedUntil TIMESTAMP, lastRenewedTime TIMESTAMP)"
-            );
-        });
-        /*Query createTable = em.createNativeQuery("CREATE TABLE IF NOT EXISTS " + SunflakeConstants.KEEP_ALIVE_TABLE_NAME +
+        em.getTransaction().begin();
+
+        Query createTable = em.createNativeQuery("CREATE TABLE IF NOT EXISTS " + SunflakeConstants.KEEP_ALIVE_TABLE_NAME +
                 " (workerId BIGINT PRIMARY KEY, reservedUntil TIMESTAMP, lastRenewedTime TIMESTAMP)");
-        createTable.executeUpdate();*/
+        createTable.executeUpdate();
+
+        em.getTransaction().commit();
+    }
+
+    static void createKeepAliveTable(Session session) {
+        session.doWork(connection -> {
+            try (var stmt = connection.createStatement()) {
+                String sql = "CREATE TABLE IF NOT EXISTS " + SunflakeConstants.KEEP_ALIVE_TABLE_NAME +
+                        " (workerId BIGINT PRIMARY KEY, reservedUntil TIMESTAMP, lastRenewedTime TIMESTAMP)";
+                stmt.execute(sql);
+            }
+        });
     }
 
     /**
@@ -33,7 +40,7 @@ class TableInitializer {
     static boolean checkTableExists(Session session, String tableName) {
         return session.doReturningWork(connection -> {
             var metaData = connection.getMetaData();
-            var tables = metaData.getTables(null, null, tableName, new String[]{"TABLE"});
+            var tables = metaData.getTables(null, null, tableName, null /*new String[]{"TABLE"}*/);
             return tables.next();
         });
     }

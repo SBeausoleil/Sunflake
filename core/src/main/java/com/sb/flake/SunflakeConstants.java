@@ -7,5 +7,6 @@ public final class SunflakeConstants {
     /**
      * The name of the table used to keep track of alive markers.
      */
-    public static final String KEEP_ALIVE_TABLE_NAME = "sunflake_alive_marker";
+    // Must be in UPPERCASE to avoid issues with some databases (e.g. H2 in our tests)
+    public static final String KEEP_ALIVE_TABLE_NAME = "SUNFLAKE_ALIVE_MARKER";
 }

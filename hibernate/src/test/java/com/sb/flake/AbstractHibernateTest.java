@@ -49,7 +49,7 @@ abstract class AbstractHibernateTest {
 
     @AfterEach
     public void rollbackTransactionAndCloseSession() {
-        transaction.rollback();
+        transaction.commit();
         session.close();
         log.debug("Session and transaction closed");
     }
