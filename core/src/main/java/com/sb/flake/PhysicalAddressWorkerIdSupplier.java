@@ -1,5 +1,6 @@
 package com.sb.flake;
 
+import com.sb.flake.exceptions.InitializationException;
 import systems.helius.commons.SmartProperties;
 
 import java.net.InetAddress;

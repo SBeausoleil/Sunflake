@@ -1,4 +1,4 @@
-package com.sb.flake;
+package com.sb.flake.exceptions;
 
 import java.util.Arrays;
 

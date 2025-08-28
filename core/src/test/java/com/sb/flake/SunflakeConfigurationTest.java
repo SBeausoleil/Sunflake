@@ -51,7 +51,7 @@ class SunflakeConfigurationTest {
                 TIMESTAMP_UNIT, "DAYS",
                 TIMESTAMP_UNITS_PER_TICK, "5",
                 TIMESTAMP_ALLOW_USAGE_OF_SIGN_BIT, "true",
-                WORK_ID_SOURCE, RandomWorkerIdSupplier.class.getName()
+                WORKER_ID_SOURCE, RandomWorkerIdSupplier.class.getName()
         ));
         SunflakeConfiguration.initialize(props);
 

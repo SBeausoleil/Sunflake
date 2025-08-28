@@ -1,9 +1,13 @@
 package com.sb.flake;
 
+import com.sb.flake.exceptions.WorkerIdReservationException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class SunflakeJpaContext {
     private static final Logger log = LoggerFactory.getLogger(SunflakeJpaContext.class);
@@ -11,10 +15,12 @@ public class SunflakeJpaContext {
 
     private final EntityManagerFactory emf;
     private final KeepAliveService keepAliveService;
+    private final ScheduledThreadPoolExecutor executor;
 
      private SunflakeJpaContext(EntityManagerFactory emf) {
         this.emf = emf;
         this.keepAliveService = new HibernateDbKeepAliveService();
+        this.executor = new ScheduledThreadPoolExecutor(2);
     }
 
     public static synchronized SunflakeJpaContext initialize(EntityManagerFactory emf) throws WorkerIdReservationException {
@@ -27,7 +33,8 @@ public class SunflakeJpaContext {
                     SunflakeConfiguration.getMaxTries(), SunflakeConfiguration.getGlobalRules().WORKER_ID_SIZE);
             SunflakeConfiguration.setAliveMarker(keepAliveToken);
 
-            // TODO start a background thread to renew the keep-alive token periodically
+            instance.executor.schedule(new KeepAliveRunner(instance.keepAliveService),
+                    SunflakeConfiguration.getRenewalInterval(), TimeUnit.SECONDS);
         } else {
             log.warn("SunflakeJpaContext is already initialized.");
         }

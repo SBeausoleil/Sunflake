@@ -1,5 +1,7 @@
 package com.sb.flake;
 
+import com.sb.flake.exceptions.InitializationException;
+import com.sb.flake.util.WorkerIdSupplierUtil;
 import jakarta.annotation.Nullable;
 import systems.helius.commons.SmartProperties;
 
@@ -24,7 +26,18 @@ public class SunflakeConfiguration {
     public static final String SEQUENCE_SIZE = PREFIX + "sequenceSize";
     public static final String WORKER_ID_SIZE = PREFIX + "workerIdSize";
 
-    public static final String WORK_ID_SOURCE = PREFIX + "workerIdSource";
+    public static final String WORKER_ID_SOURCE = PREFIX + "workerIdSource";
+    /**
+     * Source of worker ID to use if the one provided by the preferred worker id ({@link SunflakeConfiguration#WORKER_ID_SOURCE}
+     * provided an ID in use.
+     * <p>
+     *     Default: null
+     * </p>
+     * <p>
+     *     If the sunflake-hibernate module is on the classpath, we recommend using "com.sb.flake.NextOpenId".
+     * </p>
+     */
+    public static final String FALLBACK_WORKER_ID_SOURCE = PREFIX + "fallbackWorkerIdSource";
 
     public static final String TIMESTAMP = PREFIX + "timestamp.";
     public static final String TIMESTAMP_SIZE = TIMESTAMP + "size";
@@ -65,6 +78,9 @@ public class SunflakeConfiguration {
     public static final int DEFAULT_WORKER_ID_RESERVATION_MAX_TRIES = 10;
 
     private static GenerationRules globalRules;
+    private static WorkerIdSupplier preferredWorkerIdSupplier;
+    @Nullable
+    private static WorkerIdSupplier fallbackWorkerIdSupplier;
     private static Long workerId;
     @Nullable
     private static AliveMarker aliveMarker;
@@ -206,21 +222,30 @@ public class SunflakeConfiguration {
 
     private static void readWorkerId(SmartProperties properties) {
         if (workerId == null) {
-            String workerIdSourceClass = properties.getProperty(WORK_ID_SOURCE);
+            String workerIdSourceClass = properties.getProperty(WORKER_ID_SOURCE);
             if (workerIdSourceClass != null) {
                 try {
-                    Class<?> clazz = Class.forName(workerIdSourceClass);
-                    WorkerIdSupplier supplier = (WorkerIdSupplier) clazz.getMethod("getInstance", SmartProperties.class)
-                            .invoke(null, readProperties());
-                    workerId = supplier.getWorkerId(globalRules.getWorkerSize());
+                    preferredWorkerIdSupplier = WorkerIdSupplierUtil.getWorkerIdSupplier(workerIdSourceClass, readProperties());
+                    workerId = preferredWorkerIdSupplier.getWorkerId(globalRules.getWorkerSize());
                 } catch (NoSuchMethodException e) {
-                    throw new InitializationException("Defined class " + workerIdSourceClass + " does not respect the contract of " +
-                            "defining a \"public static WorkerIdSupplier getInstance(SmartProperties)\".");
+                    throw new InitializationException(e.getMessage(), e);
                 } catch (Exception e) {
                     throw new InitializationException("Exception while reading the worker ID from the class: " + workerIdSourceClass, e);
                 }
             } else {
-                throw new InitializationException("Worker ID source is not set. Set a worker ID source for the property " + WORK_ID_SOURCE + " in the Sunflake configuration file.");
+                throw new InitializationException("Worker ID source is not set. Set a worker ID source for the property " + WORKER_ID_SOURCE + " in the Sunflake configuration file.");
+            }
+        }
+        if (fallbackWorkerIdSupplier == null) {
+            String fallbackWorkerIdClass = properties.getProperty(FALLBACK_WORKER_ID_SOURCE);
+            if (fallbackWorkerIdClass != null) {
+                try {
+                    fallbackWorkerIdSupplier = WorkerIdSupplierUtil.getWorkerIdSupplier(fallbackWorkerIdClass, readProperties());
+                } catch (NoSuchMethodException e) {
+                    throw new InitializationException(e.getMessage(), e);
+                } catch (Exception e) {
+                    throw new InitializationException("Exception while reading the fallback worker ID source from the class: " + fallbackWorkerIdClass, e);
+                }
             }
         }
     }
@@ -257,6 +282,22 @@ public class SunflakeConfiguration {
     }
 
     /**
+     * Returns the liveliness marker, if the keep alive service has been initialized.
+     * @return the liveliness marker, if it exists.
+     */
+    public static Optional<AliveMarker> getAliveMarker() {
+        return Optional.ofNullable(aliveMarker);
+    }
+
+    public static WorkerIdSupplier getPreferredWorkerIdSupplier() {
+        return preferredWorkerIdSupplier;
+    }
+
+    public static Optional<WorkerIdSupplier> getFallbackWorkerIdSupplier() {
+        return Optional.ofNullable(fallbackWorkerIdSupplier);
+    }
+
+    /**
      * Parse the given ID using the global rules.
      *
      * @param id the ID to parse
@@ -269,8 +310,8 @@ public class SunflakeConfiguration {
     public static void setAliveMarker(AliveMarker aliveMarker) {
         SunflakeConfiguration.aliveMarker = aliveMarker;
         if (aliveMarker != null && aliveMarker.getWorkerId() != workerId) {
-            // TODO update all references to the worker ID
             workerId = aliveMarker.getWorkerId();
+            GeneratorsRegistry.getInstance().setWorkerId(workerId);
         }
     }
 }

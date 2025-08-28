@@ -1,4 +1,4 @@
-package com.sb.flake;
+package com.sb.flake.exceptions;
 
 /**
  * An exception that prevented the initialization of the Sunflake module.

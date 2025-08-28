@@ -1,4 +1,4 @@
-package com.sb.flake;
+package com.sb.flake.exceptions;
 
 public class ExhaustedTimestampsException extends RuntimeException {
     // TODO

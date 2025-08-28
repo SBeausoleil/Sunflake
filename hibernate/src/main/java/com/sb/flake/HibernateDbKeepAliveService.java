@@ -1,5 +1,6 @@
 package com.sb.flake;
 
+import com.sb.flake.exceptions.WorkerIdReservationException;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.EntityManager;
 import org.hibernate.service.spi.Startable;
@@ -15,7 +16,7 @@ public class HibernateDbKeepAliveService implements KeepAliveService, Startable 
     }
 
     @Override
-    public JpaAliveMarker aquireWorkerId(AliveMarker desired, WorkerIdSupplier alternativeSupplier, int maxTries, int maxLength)
+    public JpaAliveMarker aquireWorkerId(AliveMarker desired, @Nullable WorkerIdSupplier alternativeSupplier, int maxTries, int maxLength)
             throws WorkerIdReservationException {
         JpaAliveMarker jpaAliveMarker;
         if (desired instanceof JpaAliveMarker jpaMarker) {
@@ -27,7 +28,7 @@ public class HibernateDbKeepAliveService implements KeepAliveService, Startable 
     }
 
     @Internal
-    protected JpaAliveMarker aquireWorkerId(JpaAliveMarker desired, WorkerIdSupplier alternativeSupplier,
+    protected JpaAliveMarker aquireWorkerId(JpaAliveMarker desired, @Nullable WorkerIdSupplier alternativeSupplier,
                                             int maxTries, int maxLength,
                                             @Nullable List<Long> pastTries)
             throws WorkerIdReservationException {
@@ -65,6 +66,11 @@ public class HibernateDbKeepAliveService implements KeepAliveService, Startable 
                     existing.setLastRenewedTime(renewalTime);
                     acquired = em.merge(existing);
                 } else { // Someone else owns it
+                    if (alternativeSupplier == null) {
+                        // No alternative supplier, cannot try again
+                        throw new WorkerIdReservationException(new long[]{desired.getWorkerId()});
+                    }
+
                     pastTries = Objects.requireNonNullElseGet(pastTries, () -> new ArrayList<>(maxTries));
                     pastTries.add(desired.getWorkerId());
                     if (pastTries.size() < maxTries) {
