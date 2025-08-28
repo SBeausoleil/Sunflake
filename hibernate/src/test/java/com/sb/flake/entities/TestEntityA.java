@@ -1,19 +1,18 @@
-package com.sb.flake;
+package com.sb.flake.entities;
 
 import com.sb.flake.annotations.FlakeSequence;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "test_entity_foobar")
-public class TestEntity {
+public class TestEntityA {
     @Id
     @FlakeSequence
     private Long id;
     private String name;
 
-    public TestEntity() {}
+    public TestEntityA() {}
 
-    public TestEntity(String name) {
+    public TestEntityA(String name) {
         this.name = name;
     }
 

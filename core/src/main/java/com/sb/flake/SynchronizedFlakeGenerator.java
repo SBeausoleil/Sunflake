@@ -1,7 +1,5 @@
 package com.sb.flake;
 
-import java.time.Instant;
-
 /**
  * A Flake ID generator that support custom generation rules. This implementation is thread-safe.
  * <p>
@@ -28,7 +26,7 @@ public class SynchronizedFlakeGenerator extends FlakeGenerator {
             resetSequence(id);
         }
         id = insertSequence(id);
-        id |= this.SHIFTED_WORKER_ID;
+        id |= this.shiftedWorkerId;
         return id;
     }
 

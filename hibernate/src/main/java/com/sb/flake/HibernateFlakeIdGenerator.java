@@ -18,14 +18,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public class HibernateFlakeIdGenerator implements AnnotationBasedGenerator<FlakeSequence>, BeforeExecutionGenerator {
     private static final Logger log = LoggerFactory.getLogger(HibernateFlakeIdGenerator.class);
 
-    private static final ConcurrentHashMap<Table, FlakeGenerator> generators = new ConcurrentHashMap<>();
-
     private FlakeGenerator generator;
 
     @Override
     public void initialize(FlakeSequence annotation, Member member, GeneratorCreationContext context) {
+        log.info("Initializing HibernateFlakeIdGenerator {} for {}#{}", this.hashCode(), member.getDeclaringClass(), member.getName());
         this.generator = makeGenerator(context.getPersistentClass().getRootTable());
-
     }
 
     @Override
@@ -35,20 +33,19 @@ public class HibernateFlakeIdGenerator implements AnnotationBasedGenerator<Flake
 
     @Override
     public Object generate(SharedSessionContractImplementor session, Object owner, Object currentValue, EventType eventType) {
-        SunflakeJpaContext sunflakeContext = SunflakeJpaContext.getInstance();
-        if (!sunflakeContext.isInitialized()) {
-            log.info("Initializing Sunflake context for Hibernate.");
-            sunflakeContext.initialize();
+        if (log.isDebugEnabled()) { // Avoid unnecessary array allocations
+            log.debug("Generate: FlakeIdGenerator: {}, generating ID for: {} ({})",
+                    System.identityHashCode(this), owner, System.identityHashCode(owner));
         }
-        log.debug("Generate: FlakeIdGenerator: {}, generating ID for: {} ({})",
-                System.identityHashCode(this), owner, System.identityHashCode(owner));
+
         return generator.nextId();
     }
 
     private static synchronized FlakeGenerator makeGenerator(Table table) {
-        return generators.computeIfAbsent(table, c -> new SynchronizedFlakeGenerator(
-                SunflakeConfiguration.getWorkerId(),
-                SunflakeConfiguration.getGlobalRules()
-        ));
+        return GeneratorsRegistry.getInstance().getGeneratorsMap().computeIfAbsent(table.toString(),
+                c -> new SynchronizedFlakeGenerator(
+                        SunflakeConfiguration.getWorkerId(),
+                        SunflakeConfiguration.getGlobalRules()
+                ));
     }
 }

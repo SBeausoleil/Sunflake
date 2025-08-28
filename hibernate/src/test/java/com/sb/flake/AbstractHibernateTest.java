@@ -1,5 +1,9 @@
 package com.sb.flake;
 
+import com.sb.flake.entities.*;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.Persistence;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -22,7 +26,13 @@ abstract class AbstractHibernateTest {
     public static void bootstrap() {
         try (StandardServiceRegistry registry = new StandardServiceRegistryBuilder().build()) {
             sessionFactory = new MetadataSources(registry)
-                    .addAnnotatedClass(TestEntity.class)
+                    .addAnnotatedClasses(
+                            TestEntityA.class,
+                            TestEntityB.class,
+                            ParentEntityA.class,
+                            ChildA.class,
+                            ChildB.class
+                    )
                     .buildMetadata()
                     .buildSessionFactory();
         } catch (Exception e) {
@@ -44,5 +54,8 @@ abstract class AbstractHibernateTest {
         log.debug("Session and transaction closed");
     }
 
-
+    public EntityManager getEntityManager() {
+        EntityManagerFactory emf = session.getEntityManagerFactory();
+        return emf.createEntityManager();
+    }
 }

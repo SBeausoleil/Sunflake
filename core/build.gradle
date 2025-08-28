@@ -12,9 +12,10 @@ repositories {
 
 dependencies {
     api group: "systems.helius", name: "helius-commons", version: "0.4.0"
+    implementation group: 'jakarta.annotation', name: 'jakarta.annotation-api', version: '3.0.0'
 
     jmhImplementation group: 'org.openjdk.jmh', name: 'jmh-core', version: '1.37'
-    jmhAnnotationProcessor  group: 'org.openjdk.jmh', name: 'jmh-generator-annprocess', version: '1.37'
+    jmhAnnotationProcessor group: 'org.openjdk.jmh', name: 'jmh-generator-annprocess', version: '1.37'
 
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")

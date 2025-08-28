@@ -1,13 +1,14 @@
 package com.sb.flake;
 
 import java.io.Serializable;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 
 public abstract class FlakeGenerator implements Serializable {
     protected final GenerationRules RULES;
-    protected final long SHIFTED_WORKER_ID;
+    /**
+     * The worker ID shifted to the correct location.
+     */
+    protected long shiftedWorkerId;
     /**
      * Time in the time unit of this generator since the real epoch when this generator was instantiated.
      */
@@ -28,13 +29,7 @@ public abstract class FlakeGenerator implements Serializable {
 
     protected FlakeGenerator(long workerId, GenerationRules rules) {
         this.RULES = rules;
-
-        long maskedId = workerId & rules.getWorkerIdMask();
-        if (maskedId != workerId) {
-            throw new IllegalArgumentException("Invalid workerId: " + workerId + " (too big). " +
-                    "WorkerId must be a " + rules.getWorkerSize() + " bits integer.");
-        }
-        this.SHIFTED_WORKER_ID = maskedId << rules.getWorkerIdShift();
+        this.shiftedWorkerId = rules.maskAndShiftWorkerId(workerId);
 
         long msSinceEpoch = System.currentTimeMillis() - rules.getEpoch().toEpochMilli();
         this.INSTANCE_START_TIME = rules.getTimeUnit().convert(msSinceEpoch, TimeUnit.MILLISECONDS) / rules.getTimeUnitsPerTick();
@@ -60,6 +55,19 @@ public abstract class FlakeGenerator implements Serializable {
         return ts;
     }
 
+    /**
+     * Set the worker ID for this generator.
+     * @param workerId the worker ID
+     * @throws IllegalArgumentException if the worker ID is too big to fit in the allowed number of bits
+     */
+    public void setWorkerId(long workerId) {
+        this.shiftedWorkerId = getRules().maskAndShiftWorkerId(workerId);
+    }
+
+    /**
+     * Generate the next ID.
+     * @return the next ID
+     */
     public abstract long nextId();
 
 }

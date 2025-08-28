@@ -1,5 +1,6 @@
 package com.sb.flake;
 
+import jakarta.annotation.Nullable;
 import systems.helius.commons.SmartProperties;
 
 import java.io.IOException;
@@ -57,12 +58,33 @@ public class SunflakeConfiguration {
     public static final String RENEWAL_INTERVAL_SECONDS_PROPERTY = PREFIX + "renewalInterval";
     public static final int DEFAULT_RENEWAL_INTERVAL_SECONDS = 120;
 
+    public static final String WORKER_ID_RESERVATION_MAX_TRIES_PROPERTY = PREFIX + "workerIdReservationMaxTries";
+    /**
+     * How many times to try alternative worker IDs when the desired one is already taken.
+     */
+    public static final int DEFAULT_WORKER_ID_RESERVATION_MAX_TRIES = 10;
+
     private static GenerationRules globalRules;
     private static Long workerId;
+    @Nullable
+    private static AliveMarker aliveMarker;
     private static Instant epoch;
 
-    private static Integer reserveDuration;
-    private static Integer renewalInterval;
+    /**
+     * The duration in seconds for which a worker ID is reserved.
+     * Only useful when using a {@link KeepAliveService}.
+     */
+    private static int reserveDuration = -1;
+    /**
+     * The interval in seconds at which the reservation is renewed.
+     * Only useful when using a {@link KeepAliveService}.
+     */
+    private static int renewalInterval = -1;
+    /**
+     * The maximum number of tries to acquire a worker ID.
+     * Only useful when using a {@link KeepAliveService}.
+     */
+    private static int maxTries = -1;
 
     private SunflakeConfiguration() {
     }
@@ -97,17 +119,24 @@ public class SunflakeConfiguration {
     }
 
     public static int getReserveDuration() {
-        if (reserveDuration == null) {
+        if (reserveDuration == -1) {
             initialize();
         }
         return reserveDuration;
     }
 
     public static int getRenewalInterval() {
-        if (renewalInterval == null) {
+        if (renewalInterval == -1) {
             initialize();
         }
         return renewalInterval;
+    }
+
+    public static int getMaxTries() {
+        if (maxTries == -1) {
+            initialize();
+        }
+        return maxTries;
     }
 
     /**
@@ -136,13 +165,14 @@ public class SunflakeConfiguration {
         globalRules = null;
         workerId = null;
         epoch = null;
-        reserveDuration = null;
-        renewalInterval = null;
+        reserveDuration = -1;
+        renewalInterval = -1;
+        maxTries = -1;
     }
 
     private static synchronized void initialize() {
         if (globalRules == null || workerId == null || epoch == null
-                || reserveDuration == null || renewalInterval == null) {
+                || reserveDuration == -1 || renewalInterval == -1 || maxTries == -1) {
             SmartProperties properties = readProperties();
             initialize(properties);
         }
@@ -163,11 +193,14 @@ public class SunflakeConfiguration {
                         return rules.build();
                     });
         }
-        if (reserveDuration == null) {
+        if (reserveDuration == -1) {
             reserveDuration = properties.getInt(RESERVE_DURATION_SECONDS_PROPERTY, DEFAULT_RESERVE_DURATION_SECONDS);
         }
-        if (renewalInterval == null) {
+        if (renewalInterval == -1) {
             renewalInterval = properties.getInt(RENEWAL_INTERVAL_SECONDS_PROPERTY, DEFAULT_RENEWAL_INTERVAL_SECONDS);
+        }
+        if (maxTries == -1) {
+            maxTries = properties.getInt(WORKER_ID_RESERVATION_MAX_TRIES_PROPERTY, DEFAULT_WORKER_ID_RESERVATION_MAX_TRIES);
         }
     }
 
@@ -231,5 +264,13 @@ public class SunflakeConfiguration {
      */
     public static FlakeData parse(long id) {
         return getGlobalRules().parse(id);
+    }
+
+    public static void setAliveMarker(AliveMarker aliveMarker) {
+        SunflakeConfiguration.aliveMarker = aliveMarker;
+        if (aliveMarker != null && aliveMarker.getWorkerId() != workerId) {
+            // TODO update all references to the worker ID
+            workerId = aliveMarker.getWorkerId();
+        }
     }
 }
